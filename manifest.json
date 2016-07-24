@@ -37,6 +37,15 @@
                 },
                 "example": "/dolibarr",
                 "default": "/dolibarr"
+            },
+            {
+                "name": "is_public",
+                "type": "boolean",
+                "ask": {
+                    "en": "Is it a public application?",
+                    "fr": "Est-ce une application publique ?"
+                },
+                "default": true
             }
         ]
     }
