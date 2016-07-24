@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Exit on command errors and treat unset variables as an error
+set -eu
+
 app=$YNH_APP_INSTANCE_NAME
 
 # Source YunoHost helpers
@@ -62,12 +65,11 @@ if [ "$path" = "" ]; then
   sudo sed -i "s@PATHTOCHANGE@/@g" $nginx_conf_path
 else
   # Modify Nginx configuration file
-  sudo sed -i "s@PATHTOCHANGE@$path@g" $nginx_conf_path
+  sudo sed -i "s@PATHTOCHANGE@${path:-/}@g" $nginx_conf_path
 fi
-sudo sed -i "s@ALIASTOCHANGE@$final_path/@g" $nginx_conf_path
+sudo sed -i "s@DESTDIRTOCHANGE@$final_path/@g" $nginx_conf_path
 sudo sed -i "s@NAMETOCHANGE@$app@g" $nginx_conf_path
-# Reload Nginx and regenerate SSOwat conf
-sudo service nginx reload
+
 # If app is public, add url to SSOWat conf as skipped_uris
 if [[ $is_public -eq 1 ]]; then
 	# unprotected_uris allows SSO credentials to be passed anyway.
@@ -104,4 +106,5 @@ sudo yunohost app ssowatconf
 # TODO
 # Attention, pour des raisons de sécurité, afin de bloquer une nouvelle utilisation des outils d'installation/migration, une fois l'installation terminée, il est conseillé de placer dans le répertoire document de Dolibarr un fichier nommé install.lock en lecture seule.
 sudo touch $final_path/install.lock
+sudo chown www-data: $final_path/install.lock
 sudo chmod -wx $final_path/install.lock
