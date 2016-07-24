@@ -1,17 +1,26 @@
 {
     "name": "Dolibarr",
     "id": "dolibarr",
+    "packaging_format": 1,
     "description": {
         "en": "Dolibarr ERP & CRM is a modern and easy to use web software to manage your business (contacts, invoices, orders, products, stocks, agenda, emailings, etc...).",
         "fr": "Dolibarr ERP & CRM est un logiciel moderne de gestion de votre activité professionnelle ou associative (contacts, factures, commandes, stocks, agenda, etc...)."
     },
+    "url":"http://www.dolibarr.fr/",
     "license": "GPL-3+",
     "maintainer": {
         "name": "bram",
         "email": "cortex@worlddomination.be",
         "url": "http://worlddomination.be"
     },
-    "multi_instance": "false",
+    "multi_instance": "true",
+    "requirements": {
+      "yunohost": ">= 2.4.0"
+    },
+    "services":[
+      "nginx",
+      "mysql"
+    ],
     "arguments": {
         "install" : [
             {
