@@ -85,9 +85,11 @@ if ($action == 'add_prod' && ($user->rights->produit->creer || $user->rights->se
 				$error++;
 				$action = 're-edit';
 				if ($object->error == "isFatherOfThis") {
-					setEventMessage($langs->trans("ErrorAssociationIsFatherOfThis"), 'errors');
-				} else {
-					setEventMessage($object->error, 'errors');
+					setEventMessages($langs->trans("ErrorAssociationIsFatherOfThis"), null, 'errors');
+				} 
+				else 
+				{
+					setEventMessages($object->error, $object->errors, 'errors');
 				}
 			}
 		}
@@ -101,7 +103,7 @@ if ($action == 'add_prod' && ($user->rights->produit->creer || $user->rights->se
 			{
 				$error++;
 				$action = 're-edit';
-				setEventMessage($object->error, 'errors');
+				setEventMessages($object->error, $object->errors, 'errors');
 			}
 		}
 	}
@@ -139,7 +141,7 @@ if ($action == 'search')
 {
 	$current_lang = $langs->getDefaultLang();
 
-    $sql = 'SELECT DISTINCT p.rowid, p.ref, p.label, p.barcode, p.price, p.price_ttc, p.price_base_type,';
+    $sql = 'SELECT DISTINCT p.rowid, p.ref, p.label, p.barcode, p.price, p.price_ttc, p.price_base_type, p.entity,';
     $sql.= ' p.fk_product_type, p.tms as datem';
 	if (! empty($conf->global->MAIN_MULTILANGS)) $sql.= ', pl.label as labelm, pl.description as descriptionm';
 	$sql.= ' FROM '.MAIN_DB_PREFIX.'product as p';
@@ -193,8 +195,8 @@ if ($id > 0 || ! empty($ref))
 		print "<tr>";
 
 		$nblignes=6;
-		if ($object->isproduct() && ! empty($conf->stock->enabled)) $nblignes++;
-		if ($object->isservice()) $nblignes++;
+		if ($object->isProduct() && ! empty($conf->stock->enabled)) $nblignes++;
+		if ($object->isService()) $nblignes++;
 
 			// Reference
 			print '<td width="25%">'.$langs->trans("Ref").'</td><td>';
@@ -260,10 +262,10 @@ if ($id > 0 || ! empty($ref))
 
 		//if (count($prodsfather) > 0)
 		//{
-			print_fiche_titre($langs->trans("ProductParentList"),'','').'<br>';
+			print load_fiche_titre($langs->trans("ProductParentList"),'','').'<br>';
 			print '<table class="centpercent noborder">';
 			print '<tr class="liste_titre">';
-			print '<td>'.$langs->trans('ParentProduct').'</td>';
+			print '<td>'.$langs->trans('ParentProducts').'</td>';
 			print '<td>'.$langs->trans('Label').'</td>';
 			print '<td>'.$langs->trans('Qty').'</td>';
 			print '</td>';
@@ -278,6 +280,7 @@ if ($id > 0 || ! empty($ref))
 					$productstatic->type=$value["fk_product_type"];
 					$productstatic->ref=$value['ref'];
 					$productstatic->label=$value['label'];
+					$productstatic->entity=$value['entity'];
 
 					$class=($class=='impair')?'pair':'impair';
 					print '<tr class="'.$class.'">';
@@ -308,7 +311,7 @@ if ($id > 0 || ! empty($ref))
 		//if (count($prods_arbo) > 0)
 		//{
 			$atleastonenotdefined=0;
-			print_fiche_titre($langs->trans("ProductAssociationList"),'','').'<br>';
+			print load_fiche_titre($langs->trans("ProductAssociationList"),'','').'<br>';
 
 			print '<form name="formComposedProduct" action="'.$_SERVER['PHP_SELF'].'" method="post">';
 			print '<input type="hidden" name="action" value="save_composed_product" />';
@@ -334,6 +337,7 @@ if ($id > 0 || ! empty($ref))
 					$productstatic->id=$value['id'];
 					$productstatic->type=$value['type'];
 					$productstatic->label=$value['label'];
+					$productstatic->entity=$value['entity'];
 
 					if ($value['level'] <= 1)
 					{
@@ -357,7 +361,7 @@ if ($id > 0 || ! empty($ref))
 						}
 						print '</td>';
 
-						$totalline=price2num($value['nb'] * $product_fourn->fourn_unitprice, 'MT');
+					    $totalline=price2num($value['nb'] * ($product_fourn->fourn_unitprice * (1 - $product_fourn->fourn_remise_percent/100) + $product_fourn->fourn_unitcharges - $product_fourn->fourn_remise), 'MT');
 						$total+=$totalline;
 						print '<td align="right">';
 						print ($notdefined?'':($value['nb']> 1 ? $value['nb'].'x' : '').price($product_fourn->fourn_unitprice,'','',0,0,-1,$conf->currency));
@@ -458,7 +462,7 @@ if ($id > 0 || ! empty($ref))
 			$rowspan=1;
 			if (! empty($conf->categorie->enabled)) $rowspan++;
 
-	        print_fiche_titre($langs->trans("ProductToAddSearch"),'','');
+	        print load_fiche_titre($langs->trans("ProductToAddSearch"),'','');
 			print '<form action="'.DOL_URL_ROOT.'/product/composition/card.php?id='.$id.'" method="POST">';
 			print '<table class="border" width="100%"><tr><td>';
 			print '<input type="hidden" name="token" value="'.$_SESSION['newtoken'].'">';
@@ -542,6 +546,7 @@ if ($id > 0 || ! empty($ref))
 						$productstatic->ref=$objp->ref;
 						$productstatic->label=$objp->label;
 						$productstatic->type=$objp->type;
+						$productstatic->entity=$objp->entity;
 
 						print '<td>'.$productstatic->getNomUrl(1,'',24).'</td>';
 						$labeltoshow=$objp->label;

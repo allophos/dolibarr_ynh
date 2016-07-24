@@ -51,12 +51,15 @@ $select_pricing_rules=array(
 );
 if ($conf->global->MAIN_FEATURES_LEVEL >= 2)
 {
-	$select_pricing_rules['PRODUIT_CUSTOMER_PRICES_BY_QTY'] = $langs->trans('PriceByQuantity').' ('.$langs->trans("Experimental").')';	// TODO If this is enabled, price must be hidden when price by qty is enabled, also price for quantity must be used when adding product into order/propal/invoice
-	$select_pricing_rules['PRODUIT_CUSTOMER_PRICES_BY_QTY&PRODUIT_MULTIPRICES'] = $langs->trans('MultiPricesAbility') . '+' . $langs->trans('PriceByQuantity').' ('.$langs->trans("Experimental").')';
+    $langs->load("admin");
+	$select_pricing_rules['PRODUIT_CUSTOMER_PRICES_BY_QTY'] = $langs->trans('PriceByQuantity').' ('.$langs->trans("VersionExperimental").')';	// TODO If this is enabled, price must be hidden when price by qty is enabled, also price for quantity must be used when adding product into order/propal/invoice
+	$select_pricing_rules['PRODUIT_CUSTOMER_PRICES_BY_QTY&PRODUIT_MULTIPRICES'] = $langs->trans('MultiPricesAbility') . '+' . $langs->trans('PriceByQuantity').' ('.$langs->trans("VersionExperimental").')';
 }
 
 // Clean param
-if (! empty($conf->global->PRODUIT_MULTIPRICES) && empty($conf->global->PRODUIT_MULTIPRICES_LIMIT)) $conf->global->PRODUIT_MULTIPRICES_LIMIT = 5;
+if (! empty($conf->global->PRODUIT_MULTIPRICES) && empty($conf->global->PRODUIT_MULTIPRICES_LIMIT)) {
+	dolibarr_set_const($db, 'PRODUIT_MULTIPRICES_LIMIT', 5, 'chaine', 0, '', $conf->entity);
+}
 
 
 
@@ -97,12 +100,12 @@ if ($action == 'setModuleOptions')
 	if (! $error)
     {
         $db->commit();
-	    setEventMessage($langs->trans("SetupSaved"));
+	    setEventMessages($langs->trans("SetupSaved"), null, 'mesgs');
     }
     else
     {
         $db->rollback();
-	    setEventMessage($langs->trans("Error"), 'errors');
+	    setEventMessages($langs->trans("Error"), null, 'errors');
 	}
 }
 
@@ -195,11 +198,11 @@ if ($action)
 
  	if (! $error)
     {
-	    setEventMessage($langs->trans("SetupSaved"));
+	    setEventMessages($langs->trans("SetupSaved"), null, 'mesgs');
     }
     else
     {
-	    setEventMessage($langs->trans("Error"), 'errors');
+	    setEventMessages($langs->trans("Error"), null, 'errors');
     }
 }
 
@@ -225,7 +228,7 @@ else if (empty($conf->service->enabled))
 llxHeader('',$title);
 
 $linkback='<a href="'.DOL_URL_ROOT.'/admin/modules.php">'.$langs->trans("BackToModuleList").'</a>';
-print_fiche_titre($title,$linkback,'title_setup');
+print load_fiche_titre($title,$linkback,'title_setup');
 
 $head = product_admin_prepare_head();
 dol_fiche_head($head, 'general', $tab, 0, 'product');
@@ -237,7 +240,7 @@ $form=new Form($db);
  */
 $dirproduct=array('/core/modules/product/');
 
-print_titre($langs->trans("ProductCodeChecker"));
+print load_fiche_titre($langs->trans("ProductCodeChecker"));
 
 print '<table class="noborder" width="100%">'."\n";
 print '<tr class="liste_titre">'."\n";
@@ -319,7 +322,7 @@ print '</table>';
 
 print "<br>";
 
-print_titre($langs->trans("ProductOtherConf"));
+print load_fiche_titre($langs->trans("ProductOtherConf"));
 
 
 
@@ -354,7 +357,7 @@ if (!empty($conf->global->PRODUIT_CUSTOMER_PRICES_BY_QTY)) $current_rule='PRODUI
 if (!empty($conf->global->PRODUIT_CUSTOMER_PRICES)) $current_rule='PRODUIT_CUSTOMER_PRICES';
 if ((!empty($conf->global->PRODUIT_CUSTOMER_PRICES_BY_QTY)) && (!empty($conf->global->PRODUIT_MULTIPRICES))) $current_rule='PRODUIT_CUSTOMER_PRICES_BY_QTY&PRODUIT_MULTIPRICES';
 print $form->selectarray("princingrule",$select_pricing_rules,$current_rule);
-print '</td><td align="right" rowspan="'.$rowspan.'">';
+print '</td><td align="right" rowspan="'.$rowspan.'" class="nohover">';
 print '<input type="submit" class="button" value="'.$langs->trans("Modify").'">';
 print '</td>';
 print '</tr>';
@@ -518,8 +521,7 @@ if (! empty($conf->global->PRODUCT_CANVAS_ABILITY))
 	}
 	else
 	{
-		//TODO: Translate
-		print "<tr><td><b>ERROR</b>: $dir is not a directory !</td></tr>\n";
+		setEventMessages($dir.' '.$langs->trans("IsNotADir"), null, 'errors');
 	}
 }
 

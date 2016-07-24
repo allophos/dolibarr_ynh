@@ -8,7 +8,7 @@
  * Copyright (C) 2015      Marcos García        <marcosgdf@gmail.com>
  * Copyright (C) 2015	   juanjo Menent		<jmenent@2byte.es>
  * Copyright (C) 2015 	   Abbes Bahfir 	<bafbes@gmail.com>
- * Copyright (C) 2015	   Ferran Marcet		<fmarcet@2byte.es>
+ * Copyright (C) 2015-2016 Ferran Marcet		<fmarcet@2byte.es>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -61,13 +61,14 @@ $sortorder = GETPOST("sortorder",'alpha');
 $sortfield = GETPOST("sortfield",'alpha');
 
 if ($page == -1) { $page = 0 ; }
-$limit = $conf->liste_limit;
+$limit = GETPOST('limit')?GETPOST('limit','int'):$conf->liste_limit;
 $offset = $limit * $page ;
 $pageprev = $page - 1;
 $pagenext = $page + 1;
 if (! $sortorder) $sortorder="DESC";
 if (! $sortfield) $sortfield="fac.datef,fac.rowid";
 
+$search_all = GETPOST('sall');
 $search_ref = GETPOST("search_ref","int");
 $search_ref_supplier = GETPOST("search_ref_supplier","alpha");
 $search_label = GETPOST("search_label","alpha");
@@ -82,19 +83,37 @@ $day_lim	= GETPOST('day_lim','int');
 $month_lim	= GETPOST('month_lim','int');
 $year_lim	= GETPOST('year_lim','int');
 $filter = GETPOST("filtre");
+$optioncss = GETPOST('optioncss','alpha');
 
 if (GETPOST("button_removefilter_x") || GETPOST("button_removefilter"))		// Both test must be present to be compatible with all browsers
 {
+    $search_all="";
 	$search_ref="";
 	$search_ref_supplier="";
 	$search_label="";
 	$search_company="";
 	$search_amount_no_tax="";
 	$search_amount_all_tax="";
+	$search_status="";
 	$year="";
 	$month="";
-	$filter="";
+	$day="";
+	$year_lim="";
+	$month_lim="";
+	$day_lim="";
 }
+
+// List of fields to search into when doing a "search in all"
+$fieldstosearchall = array(
+    'fac.ref'=>'Ref',
+    'fac.ref_supplier'=>'RefSupplier',
+    //'fd.description'=>'Description',
+    's.nom'=>"ThirdParty",
+    'fac.note_public'=>'NotePublic',
+);
+if (empty($user->socid)) $fieldstosearchall["fac.note_private"]="NotePrivate";
+
+
 
 /*
  * Actions
@@ -147,16 +166,10 @@ if ($socid)
 {
 	$sql .= " AND s.rowid = ".$socid;
 }
-if ($filter && $filter != -1)		// GETPOST('filtre') may be a string
+if ($search_all)
 {
-	$filtrearr = explode(",", $filter);
-	foreach ($filtrearr as $fil)
-	{
-		$filt = explode(":", $fil);
-		$sql .= " AND " . $filt[0] . " = " . $filt[1];
-	}
+    $sql.= natural_search(array_keys($fieldstosearchall), $search_all);
 }
-
 if ($search_ref)
 {
 	if (is_numeric($search_ref)) $sql .= natural_search(array('fac.ref'), $search_ref);
@@ -212,9 +225,18 @@ if ($search_amount_all_tax != '')
 	$sql .= natural_search('fac.total_ttc', $search_amount_all_tax, 1);
 }
 
-if ($search_status != '')
+if ($search_status != '' && $search_status>=0)
 {
-	$sql.= " AND fac.fk_statut = '".$db->escape($search_status)."'";
+	$sql.= " AND fac.fk_statut = ".$search_status;
+}
+if ($filter && $filter != -1)
+{
+	$aFilter = explode(',', $filter);
+	foreach ($aFilter as $fil)
+	{
+		$filt = explode(':', $fil);
+		$sql .= ' AND ' . trim($filt[0]) . ' = ' . trim($filt[1]);
+	}
 }
 
 $nbtotalofrecords = 0;
@@ -240,8 +262,12 @@ if ($resql)
 	}
 
 	$param='&socid='.$socid;
+	if ($day) 					$param.='&day='.urlencode($day);
 	if ($month) 				$param.='&month='.urlencode($month);
 	if ($year)  				$param.='&year=' .urlencode($year);
+	if ($day_lim) 				$param.='&day_lim='.urlencode($day_lim);
+	if ($month_lim) 			$param.='&month_lim='.urlencode($month_lim);
+	if ($year_lim)  			$param.='&year_lim=' .urlencode($year_lim);
 	if ($search_ref)          	$param.='&search_ref='.urlencode($search_ref);
 	if ($search_ref_supplier) 	$param.='&search_ref_supplier'.urlencode($search_ref_supplier);
 	if ($search_label)      	$param.='&search_label='.urlencode($search_label);
@@ -249,9 +275,25 @@ if ($resql)
 	if ($search_amount_no_tax)	$param.='&search_amount_no_tax='.urlencode($search_amount_no_tax);
 	if ($search_amount_all_tax)	$param.='&search_amount_all_tax='.urlencode($search_amount_all_tax);
 	if ($filter && $filter != -1) $param.='&filtre='.urlencode($filter);
+	if ($optioncss != '')       $param.='&optioncss='.$optioncss;
+	if ($search_status >= 0)  	$param.="&search_status=".$search_status;
 
-	print_barre_liste($langs->trans("BillsSuppliers").($socid?" $soc->name.":""),$page,$_SERVER["PHP_SELF"],$param,$sortfield,$sortorder,'',$num,$nbtotalofrecords);
+	print_barre_liste($langs->trans("BillsSuppliers").($socid?" $soc->name.":""),$page,$_SERVER["PHP_SELF"],$param,$sortfield,$sortorder,'',$num,$nbtotalofrecords,'title_accountancy');
+	
 	print '<form method="GET" action="'.$_SERVER["PHP_SELF"].'">';
+    if ($optioncss != '') print '<input type="hidden" name="optioncss" value="'.$optioncss.'">';
+	print '<input type="hidden" name="token" value="'.$_SESSION['newtoken'].'">';
+	print '<input type="hidden" name="action" value="list">';
+	print '<input type="hidden" name="sortfield" value="'.$sortfield.'">';
+	print '<input type="hidden" name="sortorder" value="'.$sortorder.'">';
+	print '<input type="hidden" name="viewstatut" value="'.$viewstatut.'">';
+
+    if ($search_all)
+    {
+        foreach($fieldstosearchall as $key => $val) $fieldstosearchall[$key]=$langs->trans($val);
+        print $langs->trans("FilterOnInto", $search_all) . join(', ',$fieldstosearchall);
+    }
+    
 	print '<table class="liste" width="100%">';
 	print '<tr class="liste_titre">';
 	print_liste_field_titre($langs->trans("Ref"),$_SERVER["PHP_SELF"],"fac.ref,fac.rowid","",$param,"",$sortfield,$sortorder);
@@ -305,8 +347,8 @@ if ($resql)
 	print '</td><td class="liste_titre" align="right">';
 	print '<input class="flat" type="text" size="6" name="search_amount_all_tax" value="'.$search_amount_all_tax.'">';
 	print '</td><td class="liste_titre" align="right">';
-	$liststatus=array('fac.fk_statut:0'=>$langs->trans("Draft"),'fac.fk_statut:1,paye:0'=>$langs->trans("Unpaid"), 'paye:1'=>$langs->trans("Paid"));
-	print $form->selectarray('filtre', $liststatus, $filter, 1);
+	$liststatus=array('0'=>$langs->trans("Draft"),'1'=>$langs->trans("Unpaid"), '2'=>$langs->trans("Paid"));
+	print $form->selectarray('search_status', $liststatus, $search_status, 1);
 	print '</td><td class="liste_titre" align="right">';
 	print '<input type="image" class="liste_titre" name="button_search" src="'.img_picto($langs->trans("Search"),'search.png','','',1).'" value="'.dol_escape_htmltag($langs->trans("Search")).'" title="'.dol_escape_htmltag($langs->trans("Search")).'">';
 	print '<input type="image" class="liste_titre" name="button_removefilter" src="'.img_picto($langs->trans("Search"),'searchclear.png','','',1).'" value="'.dol_escape_htmltag($langs->trans("RemoveFilter")).'" title="'.dol_escape_htmltag($langs->trans("RemoveFilter")).'">';
@@ -323,6 +365,10 @@ if ($resql)
 	while ($i < min($num,$limit))
 	{
 		$obj = $db->fetch_object($resql);
+
+		$facturestatic->date_echeance = $db->jdate($obj->date_echeance);
+		$facturestatic->statut = $obj->fk_statut;
+
 		$var=!$var;
 
 		print "<tr ".$bc[$var].">";
@@ -334,7 +380,8 @@ if ($resql)
 		print $facturestatic->getNomUrl(1);
 		$filename=dol_sanitizeFileName($obj->ref);
 		$filedir=$conf->fournisseur->facture->dir_output.'/'.get_exdir($obj->facid,2,0,0,$facturestatic,'invoice_supplier').dol_sanitizeFileName($obj->ref);
-		print $formfile->getDocumentsLink('facture_fournisseur', $filename, $filedir);
+		$subdir = get_exdir($obj->facid,2,0,0,$facturestatic,'invoice_supplier').dol_sanitizeFileName($obj->ref);
+		print $formfile->getDocumentsLink('facture_fournisseur', $subdir, $filedir);
 		print "</td>\n";
 
 		// Ref supplier
@@ -342,7 +389,9 @@ if ($resql)
 
 		print '<td align="center" class="nowrap">'.dol_print_date($db->jdate($obj->datef),'day').'</td>';
 		print '<td align="center" class="nowrap">'.dol_print_date($db->jdate($obj->date_echeance),'day');
-		if (($obj->paye == 0) && ($obj->fk_statut > 0) && $obj->date_echeance && $db->jdate($obj->date_echeance) < ($now - $conf->facture->fournisseur->warning_delay)) print img_picto($langs->trans("Late"),"warning");
+		if ($facturestatic->hasDelay()) {
+			print img_picto($langs->trans("Late"),"warning");
+		}
 		print '</td>';
 		print '<td>'.dol_trunc($obj->libelle,36).'</td>';
 		print '<td>';

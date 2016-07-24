@@ -1,6 +1,7 @@
 <?php
 /* Copyright (C) 2012      Regis Houssin       <regis.houssin@capnetworks.com>
  * Copyright (C) 2013-2015 Laurent Destailleur <eldy@users.sourceforge.net>
+ * Copyright (C) 2015	   Charlie BENKE 	<charlie@patas-monkey.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -49,7 +50,7 @@ $userstatic=new User($db);
 <?php if ($permission) { ?>
 	<form class="tagtr liste_titre">
 		<div class="tagtd"><?php echo $langs->trans("Source"); ?></div>
-		<div class="tagtd"><?php echo $langs->trans("Company"); ?></div>
+		<div class="tagtd"><?php echo $langs->trans("ThirdParty"); ?></div>
 		<div class="tagtd"><?php echo $langs->trans("Contacts"); ?></div>
 		<div class="tagtd"><?php echo $langs->trans("ContactType"); ?></div>
 		<div class="tagtd">&nbsp;</div>
@@ -72,7 +73,12 @@ $userstatic=new User($db);
 		<div class="nowrap tagtd"><?php echo img_object('','user').' '.$langs->trans("Users"); ?></div>
 		<div class="tagtd"><?php echo $conf->global->MAIN_INFO_SOCIETE_NOM; ?></div>
 		<div class="tagtd maxwidthonsmartphone"><?php echo $form->select_dolusers($user->id, 'userid', 0, (! empty($userAlreadySelected)?$userAlreadySelected:null), 0, null, null, 0, 56); ?></div>
-		<div class="tagtd maxwidthonsmartphone"><?php echo $formcompany->selectTypeContact($object, '', 'type','internal'); ?></div>
+		<div class="tagtd maxwidthonsmartphone">
+		<?php
+		$tmpobject=$object;
+		if ($object->element == 'shipping' && is_object($objectsrc)) $tmpobject=$objectsrc;
+		echo $formcompany->selectTypeContact($tmpobject, '', 'type','internal'); 
+		?></div>
 		<div class="tagtd">&nbsp;</div>
 		<div class="tagtd" align="right"><input type="submit" class="button" value="<?php echo $langs->trans("Add"); ?>"></div>
 	</form>
@@ -94,6 +100,14 @@ $userstatic=new User($db);
 		<div class="tagtd nowrap"><?php echo img_object('','contact').' '.$langs->trans("ThirdPartyContacts"); ?></div>
 		<div class="tagtd nowrap maxwidthonsmartphone">
 			<?php $selectedCompany = isset($_GET["newcompany"])?$_GET["newcompany"]:$object->socid; ?>
+			<?php 
+			// add company icon for direct link 
+			if ($selectedCompany && empty($conf->dol_use_jmobile)) 
+			{
+				$companystatic->fetch($selectedCompany);
+				echo $companystatic->getNomUrl(2, '', 0, 1); 
+			}
+			?>
 			<?php $selectedCompany = $formcompany->selectCompaniesForNewContact($object, 'id', $selectedCompany, 'newcompany', '', 0); ?>
 		</div>
 		<div class="tagtd maxwidthonsmartphone">
@@ -116,7 +130,7 @@ $userstatic=new User($db);
 
 	<form class="tagtr liste_titre">
 		<div class="tagtd"><?php echo $langs->trans("Source"); ?></div>
-		<div class="tagtd"><?php echo $langs->trans("Company"); ?></div>
+		<div class="tagtd"><?php echo $langs->trans("ThirdParty"); ?></div>
 		<div class="tagtd"><?php echo $langs->trans("Contacts"); ?></div>
 		<div class="tagtd"><?php echo $langs->trans("ContactType"); ?></div>
 		<div class="tagtd" align="center"><?php echo $langs->trans("Status"); ?></div>

@@ -177,7 +177,7 @@ if ($action=='selectfield')
 	    //print_r($array_selected);
 	    $_SESSION["export_selected_fields"]=$array_selected;
 
-	    setEventMessage($warnings, 'warnings');
+	    setEventMessages($warnings, null, 'warnings');
     }
 
 }
@@ -243,12 +243,12 @@ if ($action == 'builddoc')
 	$result=$objexport->build_file($user, GETPOST('model','alpha'), $datatoexport, $array_selected, $array_filtervalue);
 	if ($result < 0)
 	{
-		setEventMessage($objexport->error, 'errors');
+		setEventMessages($objexport->error, $objexport->errors, 'errors');
 		$sqlusedforexport=$objexport->sqlusedforexport;
 	}
 	else
 	{
-		setEventMessage($langs->trans("FileSuccessfullyBuilt"));
+		setEventMessages($langs->trans("FileSuccessfullyBuilt"), null, 'mesgs');
 	    $sqlusedforexport=$objexport->sqlusedforexport;
     }
 }
@@ -259,8 +259,8 @@ if ($step == 5 && $action == 'confirm_deletefile' && $confirm == 'yes')
 	$file = $upload_dir . "/" . GETPOST('file');	// Do not use urldecode here ($_GET and $_REQUEST are already decoded by PHP).
 
 	$ret=dol_delete_file($file);
-	if ($ret) setEventMessage($langs->trans("FileWasRemoved", GETPOST('file')));
-	else setEventMessage($langs->trans("ErrorFailToDeleteFile", GETPOST('file')), 'errors');
+	if ($ret) setEventMessages($langs->trans("FileWasRemoved", GETPOST('file')), null, 'mesgs');
+	else setEventMessages($langs->trans("ErrorFailToDeleteFile", GETPOST('file')), null, 'errors');
 	header('Location: '.$_SERVER["PHP_SELF"].'?step='.$step.'&datatoexport='.$datatoexport);
 	exit;
 }
@@ -307,20 +307,20 @@ if ($action == 'add_export_model')
 	    $result = $objexport->create($user);
 		if ($result >= 0)
 		{
-			setEventMessage($langs->trans("ExportModelSaved",$objexport->model_name));
+			setEventMessages($langs->trans("ExportModelSaved",$objexport->model_name), null, 'mesgs');
 		}
 		else
 		{
 			$langs->load("errors");
 			if ($objexport->errno == 'DB_ERROR_RECORD_ALREADY_EXISTS')
-				setEventMessage($langs->trans("ErrorExportDuplicateProfil"), 'errors');
+				setEventMessages($langs->trans("ErrorExportDuplicateProfil"), null, 'errors');
 			else
-				setEventMessage($objexport->error, 'errors');
+				setEventMessages($objexport->error, $objexport->errors, 'errors');
 		}
 	}
 	else
 	{
-		setEventMessage($langs->trans("ErrorFieldRequired",$langs->transnoentities("ExportModelName")), 'errors');
+		setEventMessages($langs->trans("ErrorFieldRequired", $langs->transnoentities("ExportModelName")), null, 'errors');
 	}
 }
 
@@ -431,10 +431,10 @@ if ($step == 1 || ! $datatoexport)
 	        //print img_object($objexport->array_export_module[$key]->getName(),$export->array_export_module[$key]->picto).' ';
             print $objexport->array_export_module[$key]->getName();
             print '</td><td>';
-			$icon=$objexport->array_export_icon[$key];
+			$icon=preg_replace('/:.*$/','',$objexport->array_export_icon[$key]);
 			$label=$objexport->array_export_label[$key];
             //print $value.'-'.$icon.'-'.$label."<br>";
-			print img_object($objexport->array_export_module[$key]->getName(),$icon).' ';
+			print img_object($objexport->array_export_module[$key]->getName(), $icon).' ';
             print $label;
             print '</td><td align="right">';
             if ($objexport->array_export_perms[$key])
@@ -492,10 +492,10 @@ if ($step == 2 && $datatoexport)
     // Lot de donnees a exporter
     print '<tr><td width="25%">'.$langs->trans("DatasetToExport").'</td>';
     print '<td>';
-    $icon=$objexport->array_export_icon[0];
+	$icon=preg_replace('/:.*$/','',$objexport->array_export_icon[0]);
     $label=$objexport->array_export_label[0];
     //print $value.'-'.$icon.'-'.$label."<br>";
-    print img_object($objexport->array_export_module[0]->getName(),$icon).' ';
+    print img_object($objexport->array_export_module[0]->getName(), $icon).' ';
     print $label;
     print '</td></tr>';
 
@@ -666,10 +666,10 @@ if ($step == 3 && $datatoexport)
 	// Lot de donnees a exporter
 	print '<tr><td width="25%">'.$langs->trans("DatasetToExport").'</td>';
 	print '<td>';
-	$icon=$objexport->array_export_icon[0];
+	$icon=preg_replace('/:.*$/','',$objexport->array_export_icon[0]);
 	$label=$objexport->array_export_label[0];
 	//print $value.'-'.$icon.'-'.$label."<br>";
-	print img_object($objexport->array_export_module[0]->getName(),$icon).' ';
+	print img_object($objexport->array_export_module[0]->getName(), $icon).' ';
 	print $label;
 	print '</td></tr>';
 
@@ -832,7 +832,8 @@ if ($step == 4 && $datatoexport)
     // Lot de donnees a exporter
     print '<tr><td width="25%">'.$langs->trans("DatasetToExport").'</td>';
     print '<td>';
-    print img_object($objexport->array_export_module[0]->getName(),$objexport->array_export_icon[0]).' ';
+	$icon=preg_replace('/:.*$/','',$objexport->array_export_icon[0]);
+    print img_object($objexport->array_export_module[0]->getName(), $icon).' ';
     print $objexport->array_export_label[0];
     print '</td></tr>';
 
@@ -1069,7 +1070,8 @@ if ($step == 5 && $datatoexport)
     // Lot de donnees a exporter
     print '<tr><td width="25%">'.$langs->trans("DatasetToExport").'</td>';
     print '<td>';
-    print img_object($objexport->array_export_module[0]->getName(),$objexport->array_export_icon[0]).' ';
+	$icon=preg_replace('/:.*$/','',$objexport->array_export_icon[0]);
+    print img_object($objexport->array_export_module[0]->getName(), $icon).' ';
     print $objexport->array_export_label[0];
     print '</td></tr>';
 

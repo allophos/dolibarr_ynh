@@ -100,6 +100,10 @@ if ($user->societe_id) {
 }
 $result = restrictedArea($user, 'tax', '', '', 'charges');
 
+// Define modecompta ('CREANCES-DETTES' or 'RECETTES-DEPENSES')
+$modecompta = $conf->global->ACCOUNTING_MODE;
+if (GETPOST("modecompta")) $modecompta=GETPOST("modecompta");
+
 
 
 /*
@@ -227,7 +231,7 @@ $vatsup=$langs->trans("VATPaid");
 // VAT Received
 
 //print "<br>";
-//print_titre($vatcust);
+//print load_fiche_titre($vatcust);
 
 print "<table class=\"noborder\" width=\"100%\">";
 print "<tr class=\"liste_titre\">";
@@ -246,9 +250,11 @@ $parameters["mode"] = $modetax;
 $parameters["start"] = $date_start;
 $parameters["end"] = $date_end;
 $parameters["direction"] = 'sell';
+$parameters["type"] = 'vat';
+
 // Initialize technical object to manage hooks of expenses. Note that conf->hooks_modules contains array array
 $hookmanager->initHooks(array('externalbalance'));
-$reshook=$hookmanager->executeHooks('addStatisticLine',$parameters,$object,$action);    // Note that $action and $object may have been modified by some hooks
+$reshook=$hookmanager->executeHooks('addVatLine',$parameters,$object,$action);    // Note that $action and $object may have been modified by some hooks
 
 if (is_array($coll_list)) {
 	$var=true;
@@ -292,7 +298,14 @@ if (is_array($coll_list)) {
 } else {
 	$langs->load("errors");
 	if ($coll_list == -1) {
-		print '<tr><td colspan="5">' . $langs->trans("ErrorNoAccountancyModuleLoaded") . '</td></tr>';
+		if ($modecompta == 'CREANCES-DETTES')
+		{
+			print '<tr><td colspan="5">' . $langs->trans("ErrorNoAccountancyModuleLoaded") . '</td></tr>';
+		}
+		else
+		{
+			print '<tr><td colspan="5">' . $langs->trans("FeatureNotYetAvailable") . '</td></tr>';
+		}
 	} else if ($coll_list == -2) {
 		print '<tr><td colspan="5">' . $langs->trans("FeatureNotYetAvailable") . '</td></tr>';
 	} else {
@@ -306,7 +319,7 @@ if (is_array($coll_list)) {
 // VAT Paid
 
 //print "<br>";
-//print_titre($vatsup);
+//print load_fiche_titre($vatsup);
 
 //print "<table class=\"noborder\" width=\"100%\">";
 print "<tr class=\"liste_titre\">";
@@ -322,7 +335,7 @@ $company_static=new Societe($db);
 $coll_list = vat_by_thirdparty($db,0,$date_start,$date_end,$modetax,'buy');
 
 $parameters["direction"] = 'buy';
-$reshook=$hookmanager->executeHooks('addStatisticLine',$parameters,$object,$action);    // Note that $action and $object may have been modified by some hooks
+$reshook=$hookmanager->executeHooks('addVatLine',$parameters,$object,$action);    // Note that $action and $object may have been modified by some hooks
 if (is_array($coll_list)) {
 	$var=true;
 	$total = 0;  $totalamount = 0;
@@ -377,7 +390,14 @@ if (is_array($coll_list)) {
 } else {
 	$langs->load("errors");
 	if ($coll_list == -1) {
-		print '<tr><td colspan="5">' . $langs->trans("ErrorNoAccountancyModuleLoaded") . '</td></tr>';
+		if ($modecompta == 'CREANCES-DETTES')
+		{
+			print '<tr><td colspan="5">' . $langs->trans("ErrorNoAccountancyModuleLoaded") . '</td></tr>';
+		}
+		else
+		{
+			print '<tr><td colspan="5">' . $langs->trans("FeatureNotYetAvailable") . '</td></tr>';
+		}
 	} else if ($coll_list == -2) {
 		print '<tr><td colspan="5">' . $langs->trans("FeatureNotYetAvailable") . '</td></tr>';
 	} else {
@@ -457,7 +477,14 @@ if ($special_report) {
 	} else {
 		$langs->load("errors");
 		if ($coll_list == -1) {
-			print '<tr><td colspan="5">' . $langs->trans("ErrorNoAccountancyModuleLoaded") . '</td></tr>';
+			if ($modecompta == 'CREANCES-DETTES')
+			{
+				print '<tr><td colspan="5">' . $langs->trans("ErrorNoAccountancyModuleLoaded") . '</td></tr>';
+			}
+			else
+			{
+				print '<tr><td colspan="5">' . $langs->trans("FeatureNotYetAvailable") . '</td></tr>';
+			}
 		} else {
 			if ($coll_list == -2) {
 				print '<tr><td colspan="5">' . $langs->trans("FeatureNotYetAvailable") . '</td></tr>';
@@ -530,7 +557,14 @@ if ($special_report) {
 	} else {
 		$langs->load("errors");
 		if ($coll_list == -1) {
-			print '<tr><td colspan="5">' . $langs->trans("ErrorNoAccountancyModuleLoaded") . '</td></tr>';
+			if ($modecompta == 'CREANCES-DETTES')
+			{
+				print '<tr><td colspan="5">' . $langs->trans("ErrorNoAccountancyModuleLoaded") . '</td></tr>';
+			}
+			else
+			{
+				print '<tr><td colspan="5">' . $langs->trans("FeatureNotYetAvailable") . '</td></tr>';
+			}
 		} else {
 			if ($coll_list == -2) {
 				print '<tr><td colspan="5">' . $langs->trans("FeatureNotYetAvailable") . '</td></tr>';

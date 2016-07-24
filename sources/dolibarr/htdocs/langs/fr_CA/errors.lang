@@ -1,2 +1,2 @@
 # Dolibarr language file - Source file is en_US - errors
-WarningTooManyDataPleaseUseMoreFilters=Too many data. Please use more filters
+ErrorQtyTooLowForThisSupplier=Quantité trop faible pour ce fournisseur ou pas de prix défini sur ce produit pour ce fournisseur

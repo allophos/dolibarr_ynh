@@ -43,8 +43,6 @@ class Project extends CommonObject
      */
     protected $table_ref_field = 'ref';
 
-    var $id;
-    var $ref;
     var $description;
 	/**
 	 * @var string
@@ -60,8 +58,6 @@ class Project extends CommonObject
     var $user_author_id;    //!< Id of project creator. Not defined if shared project.
 	var $user_close_id;
     var $public;      //!< Tell if this is a public or private project
-    var $note_private;
-    var $note_public;
     var $budget_amount;
 
     var $statuts_short;
@@ -457,7 +453,9 @@ class Project extends CommonObject
     function get_element_list($type, $tablename, $datefieldname='', $dates='', $datee='')
     {
         $elements = array();
-
+        
+        if ($this->id <= 0) return $elements;
+        
 		if ($type == 'agenda')
         {
             $sql = "SELECT id as rowid FROM " . MAIN_DB_PREFIX . "actioncomm WHERE fk_project=" . $this->id;
@@ -882,19 +880,28 @@ class Project extends CommonObject
         $result = '';
         $link = '';
         $linkend = '';
-        $label = '<u>' . $langs->trans("ShowProject") . '</u>';
+        $label='';
+        if ($option != 'nolink') $label = '<u>' . $langs->trans("ShowProject") . '</u>';
         if (! empty($this->ref))
-            $label .= '<br><b>' . $langs->trans('Ref') . ':</b> ' . $this->ref;
+            $label .= ($label?'<br>':'').'<b>' . $langs->trans('Ref') . ': </b>' . $this->ref;	// The space must be after the : to not being explode when showing the title in img_picto
         if (! empty($this->title))
-            $label .= '<br><b>' . $langs->trans('Label') . ':</b> ' . $this->title;
+            $label .= ($label?'<br>':'').'<b>' . $langs->trans('Label') . ': </b>' . $this->title;	// The space must be after the : to not being explode when showing the title in img_picto
         if ($moreinpopup) $label.='<br>'.$moreinpopup;
         $linkclose = '" title="'.dol_escape_htmltag($label, 1).'" class="classfortooltip">';
 
-        if ($option != 'nolink') {
+        if ($option != 'nolink') 
+        {
             if (preg_match('/\.php$/',$option)) {
                 $link = '<a href="' . dol_buildpath($option,1) . '?id=' . $this->id . $linkclose;
                 $linkend = '</a>';
-            } else {
+            }
+            else if ($option == 'task')
+            {
+                $link = '<a href="' . DOL_URL_ROOT . '/projet/tasks.php?id=' . $this->id . $linkclose;
+                $linkend = '</a>';
+            }
+            else
+            {
                 $link = '<a href="' . DOL_URL_ROOT . '/projet/card.php?id=' . $this->id . $linkclose;
                 $linkend = '</a>';
             }
@@ -931,6 +938,7 @@ class Project extends CommonObject
         $this->date_c = $now;
         $this->date_m = $now;
         $this->date_start = $now;
+        $this->date_end = $now + (3600 * 24 * 365);
         $this->note_public = 'SPECIMEN';
 		$this->fk_ele = 20000;
         $this->opp_amount = 20000;
@@ -1113,6 +1121,7 @@ class Project extends CommonObject
 
 		// Load source object
 		$clone_project->fetch($fromid);
+		$clone_project->fetch_optionals();
 		$clone_project->fetch_thirdparty();
 
 		$orign_dt_start=$clone_project->date_start;
@@ -1138,14 +1147,21 @@ class Project extends CommonObject
 		//Generate next ref
 		$defaultref='';
     	$obj = empty($conf->global->PROJECT_ADDON)?'mod_project_simple':$conf->global->PROJECT_ADDON;
-    	if (! empty($conf->global->PROJECT_ADDON) && is_readable(DOL_DOCUMENT_ROOT ."/core/modules/project/".$conf->global->PROJECT_ADDON.".php"))
+    	// Search template files
+    	$file=''; $classname=''; $filefound=0;
+    	$dirmodels=array_merge(array('/'),(array) $conf->modules_parts['models']);
+    	foreach($dirmodels as $reldir)
     	{
-
-        	require_once DOL_DOCUMENT_ROOT ."/core/modules/project/".$conf->global->PROJECT_ADDON.'.php';
-        	$modProject = new $obj;
-        	$defaultref = $modProject->getNextValue(is_object($clone_project->thirdparty)?$clone_project->thirdparty->id:0,$clone_project);
+    	    $file=dol_buildpath($reldir."core/modules/project/".$obj.'.php',0);
+    	    if (file_exists($file))
+    	    {
+    	        $filefound=1;
+    	        dol_include_once($reldir."core/modules/project/".$obj.'.php');
+            	$modProject = new $obj;
+            	$defaultref = $modProject->getNextValue(is_object($clone_project->thirdparty)?$clone_project->thirdparty:null, $clone_project);
+            	break;
+    	    }
     	}
-
     	if (is_numeric($defaultref) && $defaultref <= 0) $defaultref='';
 
 		$clone_project->ref=$defaultref;

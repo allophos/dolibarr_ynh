@@ -54,23 +54,14 @@ class Propal extends CommonObject
      */
     protected $table_ref_field = 'ref';
 
-    var $id;
-
 	/**
 	 * ID of the client
 	 * @var int
 	 */
     var $socid;
-	/**
-	 * Client (loaded by fetch_client)
-	 * @var Societe
-	 */
-    var $client;
 
     var $contactid;
-    var $fk_project;
     var $author;
-    var $ref;
     var $ref_client;
 
 	/**
@@ -122,12 +113,6 @@ class Propal extends CommonObject
     var $user_valid_id;
     var $user_close_id;
 
-    var $total_ht;					// Total net of tax
-    var $total_tva;					// Total VAT
-    var $total_localtax1;			// Total Local Taxes 1
-    var $total_localtax2;			// Total Local Taxes 2
-    var $total_ttc;					// Total with tax
-
 	/**
 	 * @deprecated
 	 * @see total_ht
@@ -144,29 +129,14 @@ class Propal extends CommonObject
 	 */
     var $total;
 
-    var $cond_reglement_id;
     var $cond_reglement_code;
-    var $fk_account;				// Id of bank account
-    var $mode_reglement_id;
     var $mode_reglement_code;
     var $remise;
     var $remise_percent;
     var $remise_absolue;
-	/**
-	 * @deprecated
-	 * @see note_private, note_public
-	 */
-    var $note;
-    var $note_private;
-    var $note_public;
-	/**
-	 * @deprecated
-	 */
-    var $fk_delivery_address;
     var $fk_address;
     var $address_type;
     var $address;
-    var $shipping_method_id;
     var $availability_id;
     var $availability_code;
     var $demand_reason_id;
@@ -181,18 +151,10 @@ class Propal extends CommonObject
     var $lines = array();
     var $line;
 
-    var $origin;
-    var $origin_id;
-
     var $labelstatut=array();
     var $labelstatut_short=array();
 
     var $specimen;
-
-	//Incorterms
-	var $fk_incoterms;
-	var $location_incoterms;
-	var $libelle_incoterms;  //Used into tooltip
 
 	/**
 	 * Draft status
@@ -277,9 +239,10 @@ class Propal extends CommonObject
             $productdesc = $prod->description;
 
             $tva_tx = get_default_tva($mysoc,$this->client,$prod->id);
-            // local taxes
-            $localtax1_tx = get_default_localtax($mysoc,$this->client,1,$prod->tva_tx);
-            $localtax2_tx = get_default_localtax($mysoc,$this->client,2,$prod->tva_tx);
+            $tva_npr = get_default_npr($mysoc,$this->client,$prod->id);
+            if (empty($tva_tx)) $tva_npr=0;
+            $localtax1_tx = get_localtax($tva_tx,1,$mysoc,$this->client,$tva_npr);
+            $localtax2_tx = get_localtax($tva_tx,2,$mysoc,$this->client,$tva_npr);
 
             // multiprix
             if($conf->global->PRODUIT_MULTIPRICES && $this->client->price_level)
@@ -300,7 +263,8 @@ class Propal extends CommonObject
             $line->remise_percent=$remise_percent;
             $line->tva_tx=$tva_tx;
 	        $line->fk_unit=$prod->fk_unit;
-
+			if ($tva_npr) $line->info_bits = 1;
+			
             $this->lines[]=$line;
         }
     }
@@ -402,7 +366,7 @@ class Propal extends CommonObject
      * 		@param    	string		$price_base_type	HT or TTC
      * 		@param    	float		$pu_ttc             Prix unitaire TTC
      * 		@param    	int			$info_bits			Bits de type de lignes
-     *      @param      int			$type               Type of line (product, service)
+     *      @param      int			$type               Type of line (0=product, 1=service). Not used if fk_product is defined, the type of product is used.
      *      @param      int			$rang               Position of line
      *      @param		int			$special_code		Special code (also used by externals modules!)
      *      @param		int			$fk_parent_line		Id of parent line
@@ -413,13 +377,15 @@ class Propal extends CommonObject
      *		@param      int			$date_end         	End date of the line
      *      @param		array		$array_options		extrafields array
      * 		@param 		string		$fk_unit 			Code of the unit to use. Null to use the default one
+     *      @param		string		    $origin				'order', ...
+     *      @param		int			    $origin_id			Id of origin object
      *    	@return    	int         	    			>0 if OK, <0 if KO
      *
      *    	@see       	add_product
      */
-	function addline($desc, $pu_ht, $qty, $txtva, $txlocaltax1=0.0, $txlocaltax2=0.0, $fk_product=0, $remise_percent=0.0, $price_base_type='HT', $pu_ttc=0.0, $info_bits=0, $type=0, $rang=-1, $special_code=0, $fk_parent_line=0, $fk_fournprice=0, $pa_ht=0, $label='',$date_start='', $date_end='',$array_options=0, $fk_unit=null)
+	function addline($desc, $pu_ht, $qty, $txtva, $txlocaltax1=0.0, $txlocaltax2=0.0, $fk_product=0, $remise_percent=0.0, $price_base_type='HT', $pu_ttc=0.0, $info_bits=0, $type=0, $rang=-1, $special_code=0, $fk_parent_line=0, $fk_fournprice=0, $pa_ht=0, $label='',$date_start='', $date_end='',$array_options=0, $fk_unit=null, $origin='', $origin_id=0)
     {
-    	global $mysoc;
+    	global $mysoc, $conf, $langs;
 
         dol_syslog(get_class($this)."::addline propalid=$this->id, desc=$desc, pu_ht=$pu_ht, qty=$qty, txtva=$txtva, fk_product=$fk_product, remise_except=$remise_percent, price_base_type=$price_base_type, pu_ttc=$pu_ttc, info_bits=$info_bits, type=$type");
         include_once DOL_DOCUMENT_ROOT.'/core/lib/price.lib.php';
@@ -438,7 +404,7 @@ class Propal extends CommonObject
         $txtva=price2num($txtva);
         $txlocaltax1=price2num($txlocaltax1);
         $txlocaltax2=price2num($txlocaltax2);
-    		$pa_ht=price2num($pa_ht);
+    	$pa_ht=price2num($pa_ht);
         if ($price_base_type=='HT')
         {
             $pu=$pu_ht;
@@ -455,14 +421,31 @@ class Propal extends CommonObject
         {
             $this->db->begin();
 
-            // Calcul du total TTC et de la TVA pour la ligne a partir de
+        	$product_type=$type;
+			if (!empty($fk_product))
+			{
+				$product=new Product($this->db);
+				$result=$product->fetch($fk_product);
+				$product_type=$product->type;
+
+				if (! empty($conf->global->STOCK_MUST_BE_ENOUGH_FOR_PROPOSAL) && $product_type == 0 && $product->stock_reel < $qty) {
+                    $langs->load("errors");
+				    $this->error=$langs->trans('ErrorStockIsNotEnoughToAddProductOnProposal', $product->ref);
+					$this->db->rollback();
+					return -3;
+				}
+			}
+			
+			// Calcul du total TTC et de la TVA pour la ligne a partir de
             // qty, pu, remise_percent et txtva
             // TRES IMPORTANT: C'est au moment de l'insertion ligne qu'on doit stocker
             // la part ht, tva et ttc, et ce au niveau de la ligne qui a son propre taux tva.
 
             $localtaxes_type=getLocalTaxesFromRate($txtva,0,$this->thirdparty,$mysoc);
+            $txtva = preg_replace('/\s*\(.*\)/','',$txtva);  // Remove code into vatrate.
+            
+            $tabprice=calcul_price_total($qty, $pu, $remise_percent, $txtva, $txlocaltax1, $txlocaltax2, 0, $price_base_type, $info_bits, $product_type, $mysoc, $localtaxes_type);
 
-            $tabprice=calcul_price_total($qty, $pu, $remise_percent, $txtva, $txlocaltax1, $txlocaltax2, 0, $price_base_type, $info_bits, $type, '', $localtaxes_type);
             $total_ht  = $tabprice[0];
             $total_tva = $tabprice[1];
             $total_ttc = $tabprice[2];
@@ -519,18 +502,11 @@ class Propal extends CommonObject
             $this->line->date_start=$date_start;
             $this->line->date_end=$date_end;
 
-
-			// infos marge
-			if (!empty($fk_product) && empty($fk_fournprice) && empty($pa_ht)) {
-			    // by external module, take lowest buying price
-			    include_once DOL_DOCUMENT_ROOT.'/fourn/class/fournisseur.product.class.php';
-			    $productFournisseur = new ProductFournisseur($this->db);
-			    $productFournisseur->find_min_price_product_fournisseur($fk_product);
-			    $this->line->fk_fournprice = $productFournisseur->product_fourn_price_id;
-			} else {
-			    $this->line->fk_fournprice = $fk_fournprice;
-			}
+			$this->line->fk_fournprice = $fk_fournprice;
 			$this->line->pa_ht = $pa_ht;
+
+            $this->line->origin_id = $origin_id;
+            $this->line->origin = $origin;
 
             // Mise en option de la ligne
             if (empty($qty) && empty($special_code)) $this->line->special_code=3;
@@ -603,7 +579,8 @@ class Propal extends CommonObject
     {
         global $mysoc;
 
-        dol_syslog(get_class($this)."::updateLine rowid=$rowid, pu=$pu, qty=$qty, remise_percent=$remise_percent, txtva=$txtva, desc=$desc, price_base_type=$price_base_type, info_bits=$info_bits, special_code=$special_code, fk_parent_line=$fk_parent_line, pa_ht=$a_ht, type=$type, date_start=$date_start, date_end=$date_end");
+        dol_syslog(get_class($this)."::updateLine rowid=$rowid, pu=$pu, qty=$qty, remise_percent=$remise_percent,
+        txtva=$txtva, desc=$desc, price_base_type=$price_base_type, info_bits=$info_bits, special_code=$special_code, fk_parent_line=$fk_parent_line, pa_ht=$pa_ht, type=$type, date_start=$date_start, date_end=$date_end");
         include_once DOL_DOCUMENT_ROOT.'/core/lib/price.lib.php';
 
         // Clean parameters
@@ -627,7 +604,8 @@ class Propal extends CommonObject
             // la part ht, tva et ttc, et ce au niveau de la ligne qui a son propre taux tva.
 
             $localtaxes_type=getLocalTaxesFromRate($txtva,0,$this->thirdparty,$mysoc);
-
+            $txtva = preg_replace('/\s*\(.*\)/','',$txtva);  // Remove code into vatrate.
+            
             $tabprice=calcul_price_total($qty, $pu, $remise_percent, $txtva, $txlocaltax1, $txlocaltax2, 0, $price_base_type, $info_bits, $type, $mysoc, $localtaxes_type);
             $total_ht  = $tabprice[0];
             $total_tva = $tabprice[1];
@@ -647,7 +625,7 @@ class Propal extends CommonObject
             $line = new PropaleLigne($this->db);
             $line->fetch($rowid);
 
-            $staticline = clone $line;
+			$staticline = clone $line;
 
             $line->oldline = $staticline;
             $this->line = $line;
@@ -683,16 +661,7 @@ class Propal extends CommonObject
             $this->line->skip_update_total	= $skip_update_total;
             $this->line->fk_unit	= $fk_unit;
 
-            // infos marge
-            if (!empty($fk_product) && empty($fk_fournprice) && empty($pa_ht)) {
-                // by external module, take lowest buying price
-                include_once DOL_DOCUMENT_ROOT.'/fourn/class/fournisseur.product.class.php';
-			    $productFournisseur = new ProductFournisseur($this->db);
-			    $productFournisseur->find_min_price_product_fournisseur($fk_product);
-			    $this->line->fk_fournprice = $productFournisseur->product_fourn_price_id;
-			} else {
-			    $this->line->fk_fournprice = $fk_fournprice;
-			}
+			$this->line->fk_fournprice = $fk_fournprice;
             $this->line->pa_ht = $pa_ht;
 
             $this->line->date_start=$date_start;
@@ -936,7 +905,9 @@ class Propal extends CommonObject
                             $this->lines[$i]->date_start,
 							$this->lines[$i]->date_end,
 							$this->lines[$i]->array_options,
-							$this->lines[$i]->fk_unit
+							$this->lines[$i]->fk_unit,
+                            $this->element,
+                            $this->lines[$i]->id
 						);
 
                         if ($result < 0)
@@ -1048,6 +1019,7 @@ class Propal extends CommonObject
      */
     function create_from($user)
     {
+    	// i love this function because $this->products is not used in create function...
         $this->products=$this->lines;
 
         return $this->create($user);
@@ -1063,7 +1035,7 @@ class Propal extends CommonObject
     {
         global $db, $user,$langs,$conf,$hookmanager;
 
-		dol_include_once('/projet/class.project.class.php');
+		dol_include_once('/projet/class/project.class.php');
 
         $this->context['createfromclone']='createfromclone';
 
@@ -1076,44 +1048,46 @@ class Propal extends CommonObject
 		foreach($this->lines as $line)
 			$line->fetch_optionals($line->rowid);
 
-        // Load source object
-        $objFrom = dol_clone($this);
+        // Load dest object
+        $clonedObj = clone $this;
 
         $objsoc=new Societe($this->db);
 
         // Change socid if needed
-        if (! empty($socid) && $socid != $this->socid)
+        if (! empty($socid) && $socid != $clonedObj->socid)
         {
             if ($objsoc->fetch($socid) > 0)
             {
-                $this->socid 				= $objsoc->id;
-                $this->cond_reglement_id	= (! empty($objsoc->cond_reglement_id) ? $objsoc->cond_reglement_id : 0);
-                $this->mode_reglement_id	= (! empty($objsoc->mode_reglement_id) ? $objsoc->mode_reglement_id : 0);
-
-				$project = new Project($db);
-
-				if($objFrom->fk_project > 0 && $project->fetch($objFrom->fk_project)) {
-					if($project->socid <= 0) $this->fk_project = $objFrom->fk_project;
-					else $this->fk_project = '';
-				} else {
-					$this->fk_project = '';
-				}
-
-                $this->fk_delivery_address	= '';
+                $clonedObj->socid 				= $objsoc->id;
+                $clonedObj->cond_reglement_id	= (! empty($objsoc->cond_reglement_id) ? $objsoc->cond_reglement_id : 0);
+                $clonedObj->mode_reglement_id	= (! empty($objsoc->mode_reglement_id) ? $objsoc->mode_reglement_id : 0);
+                $clonedObj->fk_delivery_address	= '';
+            	
+                /*if (!empty($conf->projet->enabled))
+                {
+                    $project = new Project($db);
+    				if ($this->fk_project > 0 && $project->fetch($this->fk_project)) {
+    					if ($project->socid <= 0) $clonedObj->fk_project = $this->fk_project;
+    					else $clonedObj->fk_project = '';
+    				} else {
+    					$clonedObj->fk_project = '';
+    				}
+                }*/
+                $clonedObj->fk_project = '';    // A cloned proposal is set by default to no project.
             }
 
             // reset ref_client
-             $this->ref_client  = '';
+            $clonedObj->ref_client  = '';
 
             // TODO Change product price if multi-prices
         }
         else
         {
-            $objsoc->fetch($this->socid);
+            $objsoc->fetch($clonedObj->socid);
         }
 
-        $this->id=0;
-        $this->statut=self::STATUS_DRAFT;
+        $clonedObj->id=0;
+        $clonedObj->statut=self::STATUS_DRAFT;
 
         if (empty($conf->global->PROPALE_ADDON) || ! is_readable(DOL_DOCUMENT_ROOT ."/core/modules/propale/".$conf->global->PROPALE_ADDON.".php"))
         {
@@ -1122,32 +1096,32 @@ class Propal extends CommonObject
         }
 
         // Clear fields
-        $this->user_author	= $user->id;
-        $this->user_valid	= '';
-        $this->date			= $now;
-        $this->datep		= $now;    // deprecated
-        $this->fin_validite	= $this->date + ($this->duree_validite * 24 * 3600);
-        if (empty($conf->global->MAIN_KEEP_REF_CUSTOMER_ON_CLONING)) $this->ref_client	= '';
+        $clonedObj->user_author	= $user->id;
+        $clonedObj->user_valid	= '';
+        $clonedObj->date		= $now;
+        $clonedObj->datep		= $now;    // deprecated
+        $clonedObj->fin_validite	= $clonedObj->date + ($clonedObj->duree_validite * 24 * 3600);
+        if (empty($conf->global->MAIN_KEEP_REF_CUSTOMER_ON_CLONING)) $clonedObj->ref_client	= '';
 
         // Set ref
         require_once DOL_DOCUMENT_ROOT ."/core/modules/propale/".$conf->global->PROPALE_ADDON.'.php';
         $obj = $conf->global->PROPALE_ADDON;
         $modPropale = new $obj;
-        $this->ref = $modPropale->getNextValue($objsoc,$this);
+        $clonedObj->ref = $modPropale->getNextValue($objsoc,$clonedObj);
 
         // Create clone
-        $result=$this->create($user);
+        $result=$clonedObj->create($user);
         if ($result < 0) $error++;
         else
         {
 			// copy internal contacts
-    		if ($this->copy_linked_contact($objFrom, 'internal') < 0)
+    		if ($clonedObj->copy_linked_contact($this, 'internal') < 0)
             	$error++;
 
             // copy external contacts if same company
-            elseif ($objFrom->socid == $this->socid)
+            elseif ($this->socid == $clonedObj->socid)
             {
-		        if ($this->copy_linked_contact($objFrom, 'external') < 0)
+		        if ($clonedObj->copy_linked_contact($this, 'external') < 0)
 					$error++;
             }
         }
@@ -1157,14 +1131,14 @@ class Propal extends CommonObject
             // Hook of thirdparty module
             if (is_object($hookmanager))
             {
-                $parameters=array('objFrom'=>$objFrom);
+                $parameters=array('objFrom'=>$this,'clonedObj'=>$clonedObj);
                 $action='';
-                $reshook=$hookmanager->executeHooks('createFrom',$parameters,$this,$action);    // Note that $action and $object may have been modified by some hooks
+                $reshook=$hookmanager->executeHooks('createFrom',$parameters,$clonedObj,$action);    // Note that $action and $object may have been modified by some hooks
                 if ($reshook < 0) $error++;
             }
 
             // Call trigger
-            $result=$this->call_trigger('PROPAL_CLONE',$user);
+            $result=$clonedObj->call_trigger('PROPAL_CLONE',$user);
             if ($result < 0) { $error++; }
             // End call triggers
         }
@@ -1175,7 +1149,7 @@ class Propal extends CommonObject
         if (! $error)
         {
             $this->db->commit();
-            return $this->id;
+            return $clonedObj->id;
         }
         else
         {
@@ -1384,8 +1358,8 @@ class Propal extends CommonObject
                         $line->fk_product_type  = $objp->fk_product_type;
 	                    $line->fk_unit          = $objp->fk_unit;
 
-                        $line->date_start  		= $objp->date_start;
-                        $line->date_end  		= $objp->date_end;
+                        $line->date_start  		= $this->db->jdate($objp->date_start);
+                        $line->date_end  		= $this->db->jdate($objp->date_end);
 
                         $line->fetch_optionals($line->id,$extralabelsline);
 
@@ -1424,7 +1398,10 @@ class Propal extends CommonObject
      */
     function update_extrafields($user)
     {
+        global $conf, $hookmanager;
+
     	$action='update';
+        $error = 0;
 
     	// Actions on extra fields (by external module or standard code)
     	// TODO le hook fait double emploi avec le trigger !!
@@ -1481,12 +1458,12 @@ class Propal extends CommonObject
             $soc->fetch($this->socid);
 
             // Define new ref
-            if (! $error && (preg_match('/^[\(]?PROV/i', $this->ref)))
+            if (! $error && (preg_match('/^[\(]?PROV/i', $this->ref) || empty($this->ref))) // empty should not happened, but when it occurs, the test save life
             {
             	$num = $this->getNextNumRef($soc);
             }
             else
-          {
+            {
             	$num = $this->ref;
             }
             $this->newref = $num;
@@ -2124,26 +2101,26 @@ class Propal extends CommonObject
         $this->fetchObjectLinked($id,$this->element);
         foreach($this->linkedObjectsIds as $objecttype => $objectid)
         {
-            $numi=count($objectid);
-            for ($i=0;$i<$numi;$i++)
+        	// Nouveau système du comon object renvoi des rowid et non un id linéaire de 1 à n
+        	// On parcourt donc une liste d'objets en tant qu'objet unique
+			foreach($objectid as $key => $object)
             {
                 // Cas des factures liees directement
                 if ($objecttype == 'facture')
                 {
-                    $linkedInvoices[] = $objectid[$i];
+                    $linkedInvoices[] = $object;
                 }
                 // Cas des factures liees par un autre objet (ex: commande)
                 else
 				{
-                    $this->fetchObjectLinked($objectid[$i],$objecttype);
+                    $this->fetchObjectLinked($object,$objecttype);
                     foreach($this->linkedObjectsIds as $subobjecttype => $subobjectid)
                     {
-                        $numj=count($subobjectid);
-                        for ($j=0;$j<$numj;$j++)
+						foreach($subobjectid as $subkey => $subobject)
                         {
                         	if ($subobjecttype == 'facture')
                         	{
-                            	$linkedInvoices[] = $subobjectid[$j];
+                            	$linkedInvoices[] = $subobject;
                         	}
                         }
                     }
@@ -2529,7 +2506,7 @@ class Propal extends CommonObject
 	        $response = new WorkboardResponse();
 	        $response->warning_delay = $delay_warning/60/60/24;
 	        $response->label = $label;
-	        $response->url = DOL_URL_ROOT.'/comm/propal/list.php?viewstatut='.$statut;
+	        $response->url = DOL_URL_ROOT.'/comm/propal/list.php?viewstatut='.$statut.'&mainmenu=commercial&leftmenu=propals';
 	        $response->img = img_object($langs->trans("Propals"),"propal");
 
             // This assignment in condition is not a bug. It allows walking the results.
@@ -2757,7 +2734,7 @@ class Propal extends CommonObject
      */
     function getNomUrl($withpicto=0,$option='', $get_params='')
     {
-        global $langs;
+        global $langs, $conf;
 
         $result='';
         $label = '<u>' . $langs->trans("ShowPropal") . '</u>';
@@ -2768,7 +2745,7 @@ class Propal extends CommonObject
         if (! empty($this->total_ht))
             $label.= '<br><b>' . $langs->trans('AmountHT') . ':</b> ' . price($this->total_ht, 0, $langs, 0, -1, -1, $conf->currency);
         if (! empty($this->total_tva))
-            $label.= '<br><b>' . $langs->trans('TVA') . ':</b> ' . price($this->total_tva, 0, $langs, 0, -1, -1, $conf->currency);
+            $label.= '<br><b>' . $langs->trans('VAT') . ':</b> ' . price($this->total_tva, 0, $langs, 0, -1, -1, $conf->currency);
         if (! empty($this->total_ttc))
             $label.= '<br><b>' . $langs->trans('AmountTTC') . ':</b> ' . price($this->total_ttc, 0, $langs, 0, -1, -1, $conf->currency);
         $linkclose = '" title="'.dol_escape_htmltag($label, 1).'" class="classfortooltip">';
@@ -2804,6 +2781,8 @@ class Propal extends CommonObject
      */
     function getLinesArray()
     {
+        // For other object, here we call fetch_lines. But fetch_lines does not exists on proposal
+        
         $sql = 'SELECT pt.rowid, pt.label as custom_label, pt.description, pt.fk_product, pt.fk_remise_except,';
         $sql.= ' pt.qty, pt.tva_tx, pt.remise_percent, pt.subprice, pt.info_bits,';
         $sql.= ' pt.total_ht, pt.total_tva, pt.total_ttc, pt.fk_product_fournisseur_price as fk_fournprice, pt.buy_price_ht as pa_ht, pt.special_code, pt.localtax1_tx, pt.localtax2_tx,';
@@ -2832,9 +2811,11 @@ class Propal extends CommonObject
                 $this->lines[$i]->id				= $obj->rowid; // for backward compatibility
                 $this->lines[$i]->rowid				= $obj->rowid;
                 $this->lines[$i]->label 			= $obj->custom_label;
+                $this->lines[$i]->desc       		= $obj->description;
                 $this->lines[$i]->description 		= $obj->description;
                 $this->lines[$i]->fk_product		= $obj->fk_product;
                 $this->lines[$i]->ref				= $obj->ref;
+                $this->lines[$i]->product_ref		= $obj->ref;
                 $this->lines[$i]->entity            = $obj->entity;             // Product entity
                 $this->lines[$i]->product_label		= $obj->product_label;
                 $this->lines[$i]->product_desc		= $obj->product_desc;
@@ -2928,8 +2909,7 @@ class Propal extends CommonObject
 
 
 /**
- *	\class      PropaleLigne
- *	\brief      Class to manage commercial proposal lines
+ *	Class to manage commercial proposal lines
  */
 class PropaleLigne  extends CommonObjectLine
 {
@@ -3130,6 +3110,8 @@ class PropaleLigne  extends CommonObjectLine
 
         dol_syslog(get_class($this)."::insert rang=".$this->rang);
 
+        $pa_ht_isemptystring = (empty($this->pa_ht) && $this->pa_ht == ''); // If true, we can use a default value. If this->pa_ht = '0', we must use '0'.
+        
         // Clean parameters
         if (empty($this->tva_tx)) $this->tva_tx=0;
         if (empty($this->localtax1_tx)) $this->localtax1_tx=0;
@@ -3146,14 +3128,20 @@ class PropaleLigne  extends CommonObjectLine
         if (empty($this->fk_parent_line)) $this->fk_parent_line=0;
         if (empty($this->fk_fournprice)) $this->fk_fournprice=0;
 		if (! is_numeric($this->qty)) $this->qty = 0;
-
         if (empty($this->pa_ht)) $this->pa_ht=0;
 
-        // si prix d'achat non renseigne et utilise pour calcul des marges alors prix achat = prix vente
-        if ($this->pa_ht == 0) {
-        	if ($this->subprice > 0 && (isset($conf->global->ForceBuyingPriceIfNull) && $conf->global->ForceBuyingPriceIfNull == 1))
-        		$this->pa_ht = $this->subprice * (1 - $this->remise_percent / 100);
-        }
+       // if buy price not defined, define buyprice as configured in margin admin
+		if ($this->pa_ht == 0 && $pa_ht_isemptystring) 
+		{
+			if (($result = $this->defineBuyPrice($this->subprice, $this->remise_percent, $this->fk_product)) < 0)
+			{
+				return $result;
+			}
+			else
+			{
+				$this->pa_ht = $result;
+			}
+		}
 
         // Check parameters
         if ($this->product_type < 0) return -1;
@@ -3291,7 +3279,7 @@ class PropaleLigne  extends CommonObjectLine
     /**
      *	Update propal line object into DB
      *
-     *	@param 	int		$notrigger	1=Does not execute triggers, 0= execuete triggers
+     *	@param 	int		$notrigger	1=Does not execute triggers, 0= execute triggers
      *	@return	int					<0 if ko, >0 if ok
      */
     function update($notrigger=0)
@@ -3300,6 +3288,8 @@ class PropaleLigne  extends CommonObjectLine
 
         $error=0;
 
+        $pa_ht_isemptystring = (empty($this->pa_ht) && $this->pa_ht == ''); // If true, we can use a default value. If this->pa_ht = '0', we must use '0'.
+        
         // Clean parameters
         if (empty($this->tva_tx)) $this->tva_tx=0;
         if (empty($this->localtax1_tx)) $this->localtax1_tx=0;
@@ -3318,13 +3308,19 @@ class PropaleLigne  extends CommonObjectLine
         if (empty($this->fk_parent_line)) $this->fk_parent_line=0;
         if (empty($this->fk_fournprice)) $this->fk_fournprice=0;
         if (empty($this->subprice)) $this->subprice=0;
-
 		if (empty($this->pa_ht)) $this->pa_ht=0;
 
-		// si prix d'achat non renseigne et utilise pour calcul des marges alors prix achat = prix vente
-		if ($this->pa_ht == 0) {
-			if ($this->subprice > 0 && (isset($conf->global->ForceBuyingPriceIfNull) && $conf->global->ForceBuyingPriceIfNull == 1))
-				$this->pa_ht = $this->subprice * (1 - $this->remise_percent / 100);
+		// if buy price not defined, define buyprice as configured in margin admin
+		if ($this->pa_ht == 0 && $pa_ht_isemptystring) 
+		{
+			if (($result = $this->defineBuyPrice($this->subprice, $this->remise_percent, $this->fk_product)) < 0)
+			{
+				return $result;
+			}
+			else
+			{
+				$this->pa_ht = $result;
+			}
 		}
 
         $this->db->begin();

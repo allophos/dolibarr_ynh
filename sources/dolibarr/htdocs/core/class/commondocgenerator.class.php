@@ -1,9 +1,10 @@
 <?php
 /* Copyright (C) 2003-2005	Rodolphe Quiedeville	<rodolphe@quiedeville.org>
- * Copyright (C) 2004-2010	Laurent Destailleur		<eldy@users.sourceforge.net>
- * Copyright (C) 2004		Eric Seigne				<eric.seigne@ryxeo.com>
- * Copyright (C) 2005-2012	Regis Houssin			<regis.houssin@capnetworks.com>
- * Copyright (C) 2015       Marcos García           <marcosgdf@gmail.com>
+ * Copyright (C) 2004-2010	Laurent Destailleur	<eldy@users.sourceforge.net>
+ * Copyright (C) 2004		Eric Seigne		<eric.seigne@ryxeo.com>
+ * Copyright (C) 2005-2012	Regis Houssin		<regis.houssin@capnetworks.com>
+ * Copyright (C) 2015       	Marcos García           <marcosgdf@gmail.com>
+ * Copyright (C) 2016       	Charlie Benke           <charlie@patas-monkey.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -75,6 +76,7 @@ abstract class CommonDocGenerator
             'myuser_mobile'=>$user->user_mobile,
             'myuser_email'=>$user->email,
         	'myuser_logo'=>$user->photo,
+        	'myuser_job'=>$user->job,
             'myuser_web'=>''	// url not exist in $user object
         );
     }
@@ -388,11 +390,16 @@ abstract class CommonDocGenerator
 		// Add vat by rates
 		foreach ($object->lines as $line)
 		{
+		    // $line->tva_tx format depends on database field accuraty, no reliable. This is kept for backward comaptibility 
 			if (empty($resarray[$array_key.'_total_vat_'.$line->tva_tx])) $resarray[$array_key.'_total_vat_'.$line->tva_tx]=0;
 			$resarray[$array_key.'_total_vat_'.$line->tva_tx]+=$line->total_tva;
 			$resarray[$array_key.'_total_vat_locale_'.$line->tva_tx]=price($resarray[$array_key.'_total_vat_'.$line->tva_tx]);
+		    // $vatformated is vat without not expected chars (so 20, or 8.5 or 5.99 for example)
+			$vatformated=vatrate($line->tva_tx);
+			if (empty($resarray[$array_key.'_total_vat_'.$vatformated])) $resarray[$array_key.'_total_vat_'.$vatformated]=0;
+			$resarray[$array_key.'_total_vat_'.$vatformated]+=$line->total_tva;
+			$resarray[$array_key.'_total_vat_locale_'.$vatformated]=price($resarray[$array_key.'_total_vat_'.$vatformated]);
 		}
-
 		// Retrieve extrafields
 		if (is_array($object->array_options) && count($object->array_options))
 		{
@@ -554,7 +561,7 @@ abstract class CommonDocGenerator
      *	@param  Object			$object				Object with extrafields (must have $object->array_options filled)
      *	@param  array			$array_to_fill      Substitution array
      *  @param  Extrafields		$extrafields        Extrafields object
-     *  @param  string			$array_key	        Name of the key for return array
+     *  @param  string			$array_key	        Prefix for name of the keys into returned array
      *  @param  Translate		$outputlangs        Lang object to use for output
      *	@return	array								Substitution array
      */
@@ -575,12 +582,25 @@ abstract class CommonDocGenerator
 				$object->array_options['options_'.$key] = $extrafields->attribute_param[$key]['options'][$object->array_options['options_'.$key]];
 			}
 			else if($extrafields->attribute_type[$key] == 'date')
-			{
-				$object->array_options['options_'.$key] = (strlen($object->array_options['options_'.$key])>0?dol_print_date($object->array_options['options_'.$key],'day'):'');
+			{	
+				if (strlen($object->array_options['options_'.$key])>0)
+				{
+					$object->array_options['options_'.$key] = dol_print_date($object->array_options['options_'.$key],'day');                                       // using company output language
+					$object->array_options['options_'.$key.'_locale'] = dol_print_date($object->array_options['options_'.$key],'day','tzserver',$outputlangs);     // using output language format
+					$object->array_options['options_'.$key.'_rfc'] = dol_print_date($object->array_options['options_'.$key],'dayrfc');                             // international format
+				}
+				else
+				{
+					$object->array_options['options_'.$key] = '';
+					$object->array_options['options_'.$key.'_locale'] = '';
+					$object->array_options['options_'.$key.'_rfc'] = '';
+				}
 			}
 			else if($extrafields->attribute_type[$key] == 'datetime')
 			{
-				$object->array_options['options_'.$key] = ($object->array_options['options_'.$key]!="0000-00-00 00:00:00"?dol_print_date($object->array_options['options_'.$key],'dayhour'):'');
+				$object->array_options['options_'.$key] = ($object->array_options['options_'.$key]!="0000-00-00 00:00:00"?dol_print_date($object->array_options['options_'.$key],'dayhour'):'');                            // using company output language
+				$object->array_options['options_'.$key.'_locale'] = ($object->array_options['options_'.$key]!="0000-00-00 00:00:00"?dol_print_date($object->array_options['options_'.$key],'dayhour','tzserver',$outputlangs):'');    // using output language format
+				$object->array_options['options_'.$key.'_rfc'] = ($object->array_options['options_'.$key]!="0000-00-00 00:00:00"?dol_print_date($object->array_options['options_'.$key],'dayhourrfc'):'');                             // international format
 			}
 			$array_to_fill=array_merge($array_to_fill,array($array_key.'_options_'.$key => $object->array_options['options_'.$key]));
 		}

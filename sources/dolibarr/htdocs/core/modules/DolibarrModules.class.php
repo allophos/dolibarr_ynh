@@ -32,7 +32,7 @@
  *
  * Parent class for module descriptor class files
  */
-abstract class DolibarrModules
+class DolibarrModules           // Can not be abstract, because we need to instantiate it into unActivateModule to be able to disable a module whose files were removed.
 {
     /**
      * @var DoliDb Database handler
@@ -40,11 +40,24 @@ abstract class DolibarrModules
     public $db;
 
     /**
-     * @var string Relative path to module style sheet
-     * @deprecated
-     * @see module_parts
+     * @var int Module unique ID
      */
-    public $style_sheet = '';
+    public $numero;
+
+    /**
+     * @var string Family
+     */
+    public $family;
+    
+    /**
+     * @var int module_position
+     */
+    public $module_position=500;
+    
+    /**
+     * @var string Module name
+     */
+    public $name;
 
     /**
      * @var array Paths to create when module is activated
@@ -135,16 +148,6 @@ abstract class DolibarrModules
     public $error;
 
     /**
-     * @var int Module unique ID
-     */
-    public $numero;
-
-    /**
-     * @var string Module name
-     */
-    public $name;
-
-    /**
      * @var string Module version
      */
     public $version;
@@ -193,16 +196,29 @@ abstract class DolibarrModules
      * @var bool Module is enabled globally (Multicompany support)
      */
     public $core_enabled;
+    
+    /**
+     * @var string Relative path to module style sheet
+     * @deprecated
+     * @see module_parts
+     */
+    public $style_sheet = '';
 
+    
+	
 	/**
 	 * Constructor. Define names, constants, directories, boxes, permissions
 	 *
 	 * @param DoliDB		$db      Database handler
 	 */
-	//public function __construct($db);
+	public function __construct($db)
+	{
+		$this->db = $db;
+	}
 	// We should but can't set this as abstract because this will make dolibarr hang
 	// after migration due to old module not implementing. We must wait PHP is able to make
 	// a try catch on Fatal error to manage this correctly.
+	// We need constructor into function unActivateModule into admin.lib.php
 
     /**
      * Enables a module.
@@ -416,7 +432,7 @@ abstract class DolibarrModules
         }
         else
         {
-            // If module description translation using it's unique id does not exists, we take use its name to find translation
+            // If module description translation does not exist using its unique id, we can use its name to find translation
             if (is_array($this->langfiles))
             {
                 foreach($this->langfiles as $val)
@@ -465,6 +481,7 @@ abstract class DolibarrModules
         if ($this->version == 'dolibarr' || $this->version == 'dolibarr_deprecated') return 'core';
         if (! empty($this->version) && ! in_array($this->version,array('experimental','development'))) return 'external';
         if (! empty($this->editor_name) || ! empty($this->editor_web)) return 'external';
+        if ($this->numero >= 100000) return 'external';
         return 'unknown';
     }
 
@@ -493,12 +510,12 @@ abstract class DolibarrModules
         $langstring="ExportDataset_".$this->export_code[$r];
         if ($langs->trans($langstring) == $langstring)
         {
-            // Traduction non trouvee
+            // Translation not found
             return $langs->trans($this->export_label[$r]);
         }
         else
         {
-            // Traduction trouvee
+            // Translation found
             return $langs->trans($langstring);
         }
     }
@@ -519,12 +536,12 @@ abstract class DolibarrModules
         //print "x".$langstring;
         if ($langs->trans($langstring) == $langstring)
         {
-            // Traduction non trouvee
+            // Translation not found
             return $langs->trans($this->import_label[$r]);
         }
         else
         {
-            // Traduction trouvee
+            // Translation found
             return $langs->trans($langstring);
         }
     }
@@ -623,8 +640,14 @@ abstract class DolibarrModules
                 {
                     $dirfound++;
 
-                    // Run llx_mytable.sql files
+                    // Run llx_mytable.sql files, then llx_mytable_*.sql
+                    $files = array();
                     while (($file = readdir($handle))!==false)
+                    {
+                        $files[] = $file;
+                    }
+                    sort($files);
+                    foreach ($files as $file) 
                     {
                         if (preg_match('/\.sql$/i',$file) && ! preg_match('/\.key\.sql$/i',$file) && substr($file,0,4) == 'llx_' && substr($file,0,4) != 'data')
                         {
@@ -635,8 +658,14 @@ abstract class DolibarrModules
 
                     rewinddir($handle);
 
-                    // Run llx_mytable.key.sql files (Must be done after llx_mytable.sql)
+                    // Run llx_mytable.key.sql files (Must be done after llx_mytable.sql) then then llx_mytable_*.key.sql
+                    $files = array();
                     while (($file = readdir($handle))!==false)
+                    {
+                        $files[] = $file;
+                    }
+                    sort($files);
+                    foreach ($files as $file) 
                     {
                         if (preg_match('/\.key\.sql$/i',$file) && substr($file,0,4) == 'llx_' && substr($file,0,4) != 'data')
                         {
@@ -648,7 +677,13 @@ abstract class DolibarrModules
                     rewinddir($handle);
 
                     // Run data_xxx.sql files (Must be done after llx_mytable.key.sql)
+                    $files = array();
                     while (($file = readdir($handle))!==false)
+                    {
+                        $files[] = $file;
+                    }
+                    sort($files);
+                    foreach ($files as $file) 
                     {
                         if (preg_match('/\.sql$/i',$file) && ! preg_match('/\.key\.sql$/i',$file) && substr($file,0,4) == 'data')
                         {
@@ -660,7 +695,13 @@ abstract class DolibarrModules
                     rewinddir($handle);
 
                     // Run update_xxx.sql files
+                    $files = array();
                     while (($file = readdir($handle))!==false)
+                    {
+                        $files[] = $file;
+                    }
+                    sort($files);
+                    foreach ($files as $file) 
                     {
                         if (preg_match('/\.sql$/i',$file) && ! preg_match('/\.key\.sql$/i',$file) && substr($file,0,6) == 'update')
                         {
@@ -1182,7 +1223,7 @@ print $sql;
             $obj=$this->db->fetch_object($resql);
             if ($obj !== null && ! empty($obj->value) && ! empty($this->rights))
             {
-                // Si module actif
+                // If the module is active
                 foreach ($this->rights as $key => $value)
                 {
                     $r_id       = $this->rights[$key][0];
@@ -1372,7 +1413,7 @@ print $sql;
                 }
                 if (! $foundparent)
                 {
-                    $this->error="ErrorBadDefinitionOfMenuArrayInModuleDescriptor (bad value for key fk_menu)";
+                    $this->error="ErrorBadDefinitionOfMenuArrayInModuleDescriptor";
                     dol_syslog(get_class($this)."::insert_menus ".$this->error." ".$this->menu[$key]['fk_menu'], LOG_ERR);
                     $err++;
                 }

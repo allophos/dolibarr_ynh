@@ -39,7 +39,7 @@ $mine = ($mode == 'mine' ? 1 : 0);
 
 $object = new Project($db);
 
-include DOL_DOCUMENT_ROOT.'/core/actions_fetchobject.inc.php';  // Must be include, not includ_once
+include DOL_DOCUMENT_ROOT.'/core/actions_fetchobject.inc.php';  // Must be include, not include_once
 
 // Security check
 $socid=0;
@@ -109,7 +109,7 @@ if ($id > 0 || ! empty($ref))
     // Define a complementary filter for search of next/prev ref.
     if (! $user->rights->projet->all->lire)
     {
-        $projectsListId = $object->getProjectsAuthorizedForUser($user,$mine,0);
+        $projectsListId = $object->getProjectsAuthorizedForUser($user,0,0);
         $object->next_prev_filter=" rowid in (".(count($projectsListId)?join(',',array_keys($projectsListId)):'0').")";
     }
     print $form->showrefnav($object, 'ref', $linkback, 1, 'ref', 'ref', '', $param);

@@ -104,7 +104,7 @@ class box_project extends ModeleBoxes
                         'td' => 'align="left"',
                         'text' => $objp->ref,
                         'tooltip' => $tooltip,
-                        'url' => DOL_URL_ROOT."/product/card.php?id=".$objp->rowid,
+                        'url' => DOL_URL_ROOT."/projet/card.php?id=".$objp->rowid,
                     );
 
                     $this->info_box_contents[$i][2] = array(
@@ -115,7 +115,7 @@ class box_project extends ModeleBoxes
 					$sql ="SELECT count(*) as nb, sum(progress) as totprogress";
 					$sql.=" FROM ".MAIN_DB_PREFIX."projet as p LEFT JOIN ".MAIN_DB_PREFIX."projet_task as pt on pt.fk_projet = p.rowid";
 					$sql.=" WHERE p.entity = ".$conf->entity;
-
+					$sql.=" AND p.rowid = ".$objp->rowid;
 					$resultTask = $db->query($sql);
 					if ($resultTask) {
 						$objTask = $db->fetch_object($resultTask);

@@ -166,9 +166,9 @@ $form=new Form($db);
 if (! $rowid && $action != 'create' && $action != 'edit')
 {
 
-	print_fiche_titre($langs->trans("MembersTypes"));
+	print load_fiche_titre($langs->trans("MembersTypes"));
 
-	dol_fiche_head('');
+	//dol_fiche_head('');
 
 	$sql = "SELECT d.rowid, d.libelle, d.cotisation, d.vote";
 	$sql.= " FROM ".MAIN_DB_PREFIX."adherent_type as d";
@@ -211,7 +211,7 @@ if (! $rowid && $action != 'create' && $action != 'edit')
 		dol_print_error($db);
 	}
 
-	dol_fiche_end();
+	//dol_fiche_end();
 
 	/*
 	 * Hotbar
@@ -238,19 +238,18 @@ if ($action == 'create')
 {
 	$object = new AdherentType($db);
 
-	print_fiche_titre($langs->trans("NewMemberType"));
+	print load_fiche_titre($langs->trans("NewMemberType"));
 
 	print '<form action="'.$_SERVER['PHP_SELF'].'" method="POST">';
 	print '<input type="hidden" name="token" value="'.$_SESSION['newtoken'].'">';
+	print '<input type="hidden" name="action" value="add">';
 
     dol_fiche_head('');
 
 	print '<table class="border" width="100%">';
 	print '<tbody>';
 
-	print '<input type="hidden" name="action" value="add">';
-
-	print '<tr><td class="fieldrequired">'.$langs->trans("Label").'</td><td><input type="text" name="libelle" size="40"></td></tr>';
+	print '<tr><td width="25%" class="fieldrequired">'.$langs->trans("Label").'</td><td><input type="text" name="libelle" size="40"></td></tr>';
 
 	print '<tr><td>'.$langs->trans("SubscriptionRequired").'</td><td>';
 	print $form->selectyesno("cotisation",1,1);
@@ -679,7 +678,16 @@ if ($rowid > 0)
 			print '<br><br><table class="border" width="100%">';
 			foreach($extrafields->attribute_label as $key=>$label)
 			{
-				$value=(isset($_POST["options_".$key])?$_POST["options_".$key]:(isset($object->array_options['options_'.$key])?$object->array_options['options_'.$key]:''));
+				if (isset($_POST["options_" . $key])) {
+					if (is_array($_POST["options_" . $key])) {
+						// $_POST["options"] is an array but following code expects a comma separated string
+						$value = implode(",", $_POST["options_" . $key]);
+					} else {
+						$value = $_POST["options_" . $key];
+					}
+				} else {
+					$value = $adht->array_options["options_" . $key];
+				}
 				print '<tr><td width="30%">'.$label.'</td><td>';
 				print $extrafields->showInputField($key,$value);
 				print "</td></tr>\n";

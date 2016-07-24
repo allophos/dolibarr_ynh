@@ -3,8 +3,6 @@
 # No errors
 NoErrorCommitIsDone=بدون خطا، ما متعهد
 # Errors
-Error=خطا
-Errors=خطاها
 ErrorButCommitIsDone=خطاهای یافت اما ما با وجود این اعتبار
 ErrorBadEMail=ایمیل٪ اشتباه است
 ErrorBadUrl=آدرس٪ s در اشتباه است
@@ -63,7 +61,7 @@ ErrorSizeTooLongForVarcharType=حجم بیش از حد طولانی برای ن�
 ErrorNoValueForSelectType=لطفا ارزش برای انتخاب لیست را پر کنید
 ErrorNoValueForCheckBoxType=لطفا ارزش برای استخراج را پر کنید
 ErrorNoValueForRadioType=لطفا ارزش برای فهرست های رادیویی را پر کنید
-ErrorBadFormatValueList=ارزش لیست نیست می توانید بیش از یک آمده <u>است:٪ s را،</u> اما باید حداقل یک: هیدرولیکی Llave، VALORES
+ErrorBadFormatValueList=The list value cannot have more than one comma: <u>%s</u>, but need at least one: key,value
 ErrorFieldCanNotContainSpecialCharacters=<b>٪</b> درست <b>ها</b> باید شامل کاراکترهای خاص نیست.
 ErrorFieldCanNotContainSpecialNorUpperCharacters=Field <b>%s</b> must not contain special characters, nor upper case characters and cannot contain only numbers.
 ErrorNoAccountancyModuleLoaded=بدون ماژول حسابداری فعال
@@ -172,8 +170,13 @@ ErrorFieldMustBeANumeric=Field <b>%s</b> must be a numeric value
 ErrorFieldMustBeAnInteger=Field <b>%s</b> must be an integer
 ErrorMandatoryParametersNotProvided=Mandatory parameter(s) not provided
 ErrorOppStatusRequiredIfAmount=You set an estimated amount for this opportunity/lead. So you must also enter its status
+ErrorBadDefinitionOfMenuArrayInModuleDescriptor=Bad Definition Of Menu Array In Module Descriptor (bad value for key fk_menu)
+ErrorSavingChanges=An error has ocurred when saving the changes
+ErrorWarehouseRequiredIntoShipmentLine=Warehouse is required on the line to ship
+ErrorFileMustHaveFormat=File must have format %s
 
 # Warnings
+WarningPasswordSetWithNoAccount=A password was set for this member. However, no user account was created. So this password is stored but can't be used to login to Dolibarr. It may be used by an external module/interface but if you don't need to define any login nor password for a member, you can disable option "Manage a login for each member" from Member module setup. If you need to manage a login but don't need any password, you can keep this field empty to avoid this warning. Note: Email can also be used as a login if the member is linked to a user.
 WarningMandatorySetupNotComplete=پارامترهای راه اندازی اجباری هنوز تعریف نشده
 WarningSafeModeOnCheckExecDir=هشدار، <b>safe_mode</b> گزینه PHP در تا دستور باید در داخل یک دایرکتوری اعلام شده توسط پی اچ پی <b>safe_mode_exec_dir</b> پارامتر های ذخیره شده است.
 WarningAllowUrlFopenMustBeOn=<b>خاموش allow_url_fopen</b> پارامتر باید به <b>در</b> در <b>فایل php.ini</b> فیلتر برای داشتن این ماژول کار کاملا تنظیم شده است. شما باید این فایل را به صورت دستی تغییر دهید.
@@ -191,5 +194,5 @@ WarningClickToDialUserSetupNotComplete=راه اندازی از اطلاعات C
 WarningNotRelevant=عملیات بی ربط برای این مجموعه داده
 WarningFeatureDisabledWithDisplayOptimizedForBlindNoJs=قابلیت غیر فعال زمانی که راه اندازی صفحه نمایش برای فرد نابینا یا از مرورگرهای متن بهینه شده است.
 WarningPaymentDateLowerThanInvoiceDate=Payment date (%s) is earlier than invoice date (%s) for invoice %s.
-WarningTooManyDataPleaseUseMoreFilters=Too many data. Please use more filters
+WarningTooManyDataPleaseUseMoreFilters=Too many data (more than %s lines). Please use more filters or set the constant %s to a higher limit.
 WarningSomeLinesWithNullHourlyRate=Some times were recorded by users when their hourly rate was not defined. A value of 0 was used but this may result in wrong valuation of time spent.
