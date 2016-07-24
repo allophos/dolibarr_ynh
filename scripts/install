@@ -94,14 +94,15 @@ sudo yunohost app ssowatconf
 # sudo yunohost app setting dolibarr unprotected_uris -v "/"
 # sudo yunohost app ssowatconf
 
-# curl -kL -H "Host: $domain" -X POST https://127.0.0.1$path/install/setp1.php --data "testpost=ok&action=set&main_dir=%2Fvar%2Fwww%2Fdolibarr%2Fhtdocs&main_data_dir=%2Fvar%2Fwww%2Fdolibarr%2Fdocuments&main_url=https://$domain$path&db_name=dolibarr&db_type=mysqli&db_host=localhost&db_port=&db_prefix=llx_&db_user=dolibarr&db_pass=$db_pwd&selectlang=fr_FR" > /dev/null 2>&1
-#
-# curl -kL -H "Host: $domain" -X POST https://127.0.0.1$path/install/setp2.php --data "testpost=ok&action=set&dolibarr_main_db_character_set=latin1&dolibarr_main_db_collation=latin1_swedish_ci&selectlang=fr_FR" > /dev/null 2>&1
-#
-# curl -kL -H "Host: $domain" -X POST https://127.0.0.1$path/install/setp4.php --data "testpost=ok&action=set&selectlang=fr_FR" > /dev/null 2>&1
-#
-# curl -kL -H "Host: $domain" -X POST https://127.0.0.1$path/install/setp5.php --data "testpost=ok&action=set&login=admin&pass=neutrinet&pass_verif=neutrinet&selectlang=fr_FR" > /dev/null 2>&1
+# curl -KL -H "host: $domain" -X POST https://127.0.0.1$path/install/fileconf.php?selectlang=fr_FR
 
+curl -kL -H "Host: $domain" -X POST https://127.0.0.1$path/install/setp1.php --data "testpost=ok&action=set&main_dir=%2Fvar%2Fwww%2Fdolibarr&main_data_dir=%2Fvar%2Fwww%2Fdolibarr%2Fdocuments&main_url=https://$domain$path&db_name=$dbname&db_type=mysqli&db_host=localhost&db_port=&db_prefix=llx_&db_user=$dbuser&db_pass=$dbpass&selectlang=fr_FR" > /dev/null 2>&1
+#
+curl -kL -H "Host: $domain" -X POST https://127.0.0.1$path/install/setp2.php --data "testpost=ok&action=set&dolibarr_main_db_character_set=latin1&dolibarr_main_db_collation=latin1_swedish_ci&selectlang=fr_FR" > /dev/null 2>&1
+#
+curl -kL -H "Host: $domain" -X POST https://127.0.0.1$path/install/setp4.php --data "testpost=ok&action=set&selectlang=fr_FR" > /dev/null 2>&1
+#
+curl -kL -H "Host: $domain" -X POST https://127.0.0.1$path/install/setp5.php --data "testpost=ok&action=set&login=admin&pass=neutrinet&pass_verif=neutrinet&selectlang=fr_FR" > /dev/null 2>&1
 
 # TODO
 # Attention, pour des raisons de sécurité, afin de bloquer une nouvelle utilisation des outils d'installation/migration, une fois l'installation terminée, il est conseillé de placer dans le répertoire document de Dolibarr un fichier nommé install.lock en lecture seule.
