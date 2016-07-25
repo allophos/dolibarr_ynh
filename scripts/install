@@ -29,11 +29,17 @@ ynh_app_setting_set "$app" is_public "$is_public"
 # Remove trailing "/" for next commands
 path=${path%/}
 
+
+cryptkey=$(ynh_string_random 32)
+ynh_app_setting_set "$app" cryptkey "$cryptkey"
+
 # Generate MySQL password and create database
 dbuser=$app
 dbname=$app
 dbpass=$(ynh_string_random 12)
 ynh_mysql_create_db "$dbname" "$dbuser" "$dbpass"
+ynh_mysql_connect_as $dbuser $dbpass $dbname < ../conf/dolibarr.sql
+
 ynh_app_setting_set "$app" dbpass "$dbpass"
 ynh_app_setting_set "$app" dbuser "$dbuser"
 ynh_app_setting_set "$app" dbname "$dbname"
@@ -41,11 +47,11 @@ ynh_app_setting_set "$app" dbname "$dbname"
 # create app dir and copy sources
 final_path=/var/www/$app
 sudo mkdir -p $final_path
-sudo cp -a ../sources/dolibarr/htdocs/* $final_path
+sudo cp -a ../sources/dolibarr/* $final_path
 
 sudo mkdir $final_path/documents
 
-final_conf_path=$final_path/conf/conf.php
+final_conf_path=$final_path/htdocs/conf/conf.php
 sudo cp ../conf/conf.php $final_conf_path
 
 sudo sed -i "s@YNH_MAIN_URL@$domain$path@g" $final_conf_path
@@ -54,7 +60,9 @@ sudo sed -i "s@YNH_DATA_ROOT@$final_path\/documents@g" $final_conf_path
 sudo sed -i "s@YNH_DB_NAME@$dbname@g" $final_conf_path
 sudo sed -i "s@YNH_DB_USER@$dbuser@g" $final_conf_path
 sudo sed -i "s@YNH_DB_PASS@$dbpass@g" $final_conf_path
+sudo sed -i "s@YNH_CRYPT_KEY@$cryptkey@g" $final_conf_path
 
+sudo chmod -R 755 $final_path
 sudo chown -R www-data: $final_path
 
 # nginx
@@ -67,7 +75,7 @@ else
   # Modify Nginx configuration file
   sudo sed -i "s@PATHTOCHANGE@${path:-/}@g" $nginx_conf_path
 fi
-sudo sed -i "s@DESTDIRTOCHANGE@$final_path/@g" $nginx_conf_path
+sudo sed -i "s@DESTDIRTOCHANGE@$final_path/htdocs/@g" $nginx_conf_path
 sudo sed -i "s@NAMETOCHANGE@$app@g" $nginx_conf_path
 
 # If app is public, add url to SSOWat conf as skipped_uris
@@ -96,15 +104,14 @@ sudo yunohost app ssowatconf
 
 # curl -KL -H "host: $domain" -X POST https://127.0.0.1$path/install/fileconf.php?selectlang=fr_FR
 
-curl -kL -H "Host: $domain" -X POST https://127.0.0.1$path/install/setp1.php --data "testpost=ok&action=set&main_dir=%2Fvar%2Fwww%2Fdolibarr&main_data_dir=%2Fvar%2Fwww%2Fdolibarr%2Fdocuments&main_url=https://$domain$path&db_name=$dbname&db_type=mysqli&db_host=localhost&db_port=&db_prefix=llx_&db_user=$dbuser&db_pass=$dbpass&selectlang=fr_FR" > /dev/null 2>&1
-#
-curl -kL -H "Host: $domain" -X POST https://127.0.0.1$path/install/setp2.php --data "testpost=ok&action=set&dolibarr_main_db_character_set=latin1&dolibarr_main_db_collation=latin1_swedish_ci&selectlang=fr_FR" > /dev/null 2>&1
-#
-curl -kL -H "Host: $domain" -X POST https://127.0.0.1$path/install/setp4.php --data "testpost=ok&action=set&selectlang=fr_FR" > /dev/null 2>&1
-#
-curl -kL -H "Host: $domain" -X POST https://127.0.0.1$path/install/setp5.php --data "testpost=ok&action=set&login=admin&pass=neutrinet&pass_verif=neutrinet&selectlang=fr_FR" > /dev/null 2>&1
+# curl -kL -H "Host: $domain" -X POST https://127.0.0.1$path/install/setp1.php --data "testpost=ok&action=set&main_dir=%2Fvar%2Fwww%2Fdolibarr&main_data_dir=%2Fvar%2Fwww%2Fdolibarr%2Fdocuments&main_url=https://$domain$path&db_name=$dbname&db_type=mysqli&db_host=localhost&db_port=&db_prefix=llx_&db_user=$dbuser&db_pass=$dbpass&selectlang=fr_FR" > /dev/null 2>&1
+# #
+# curl -kL -H "Host: $domain" -X POST https://127.0.0.1$path/install/setp2.php --data "testpost=ok&action=set&dolibarr_main_db_character_set=latin1&dolibarr_main_db_collation=latin1_swedish_ci&selectlang=fr_FR" > /dev/null 2>&1
+# #
+# curl -kL -H "Host: $domain" -X POST https://127.0.0.1$path/install/setp4.php --data "testpost=ok&action=set&selectlang=fr_FR" > /dev/null 2>&1
+# #
+# curl -kL -H "Host: $domain" -X POST https://127.0.0.1$path/install/setp5.php --data "testpost=ok&action=set&login=admin&pass=neutrinet&pass_verif=neutrinet&selectlang=fr_FR" > /dev/null 2>&1
 
-# TODO
 # Attention, pour des raisons de sécurité, afin de bloquer une nouvelle utilisation des outils d'installation/migration, une fois l'installation terminée, il est conseillé de placer dans le répertoire document de Dolibarr un fichier nommé install.lock en lecture seule.
 sudo touch $final_path/install.lock
 sudo chown www-data: $final_path/install.lock
