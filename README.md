@@ -9,6 +9,8 @@ for yunohost 2.4, untested
 
 ## todo
 - ldap authentication
+- sso
+- backup / restore
 
 ## default admin
 default dolibarr admin user is ```admin``` and psswd ```dolibarr```

@@ -14,13 +14,16 @@ $dolibarr_main_db_type='mysqli';
 $dolibarr_main_db_character_set='utf8';
 $dolibarr_main_db_collation='utf8_general_ci';
 
-$dolibarr_main_authentication='ldap';
-$dolibarr_main_auth_ldap_host='127.0.0.1';                  $dolibarr_main_auth_ldap_port='389';                        // $dolibarr_main_auth_ldap_version='3';
-$dolibarr_main_auth_ldap_servertype='openldap';
-$dolibarr_main_auth_ldap_login_attribute='uid'; $dolibarr_main_auth_ldap_dn='ou=users,dc=yunohost,dc=org';
-$dolibarr_main_auth_ldap_filter = 'uid=%s';
-// $dolibarr_main_auth_ldap_admin_login='';
-// $dolibarr_main_auth_ldap_admin_pass='';
+$dolibarr_main_authentication='dolibarr'; // replace dolibarr by ldap to use ldap auth (CAN'T GET IT WORKING)
+// $dolibarr_main_auth_ldap_host='localhost';
+// $dolibarr_main_auth_ldap_port='389';
+// $dolibarr_main_auth_ldap_version='3';
+// $dolibarr_main_auth_ldap_servertype='openldap';
+// $dolibarr_main_auth_ldap_login_attribute='uid';
+// $dolibarr_main_auth_ldap_dn='ou=users,dc=yunohost,dc=org';
+// $dolibarr_main_auth_ldap_filter = '&(objectClass=inetOrgPerson)';
+// // $dolibarr_main_auth_ldap_admin_login='';
+// // $dolibarr_main_auth_ldap_admin_pass='';
 // $dolibarr_main_auth_ldap_debug='false';
 
 
