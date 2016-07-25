@@ -55,7 +55,7 @@ final_conf_path=$final_path/htdocs/conf/conf.php
 sudo cp ../conf/conf.php $final_conf_path
 
 sudo sed -i "s@YNH_MAIN_URL@$domain$path@g" $final_conf_path
-sudo sed -i "s@YNH_DOC_ROOT@$final_path@g" $final_conf_path
+sudo sed -i "s@YNH_DOC_ROOT@$final_path/htdocs@g" $final_conf_path
 sudo sed -i "s@YNH_DATA_ROOT@$final_path\/documents@g" $final_conf_path
 sudo sed -i "s@YNH_DB_NAME@$dbname@g" $final_conf_path
 sudo sed -i "s@YNH_DB_USER@$dbuser@g" $final_conf_path
