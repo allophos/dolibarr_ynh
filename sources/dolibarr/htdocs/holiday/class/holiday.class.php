@@ -3,7 +3,6 @@
  * Copyright (C) 2012-2014	Laurent Destailleur	<eldy@users.sourceforge.net>
  * Copyright (C) 2012-2016	Regis Houssin		<regis.houssin@capnetworks.com>
  * Copyright (C) 2013		Florian Henry		<florian.henry@open-concept.pro>
- * Copyright (C) 2016       Juanjo Menent       <jmenent@2byte.es>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -118,7 +117,7 @@ class Holiday extends CommonObject
      */
     function create($user, $notrigger=0)
     {
-        global $conf;
+        global $conf, $langs;
         $error=0;
 
         $now=dol_now();
@@ -138,8 +137,7 @@ class Holiday extends CommonObject
         $sql.= "statut,";
         $sql.= "fk_validator,";
         $sql.= "fk_type,";
-        $sql.= "fk_user_create,";
-        $sql.= "entity";
+        $sql.= "fk_user_create";
         $sql.= ") VALUES (";
         $sql.= "'".$this->fk_user."',";
         $sql.= " '".$this->db->idate($now)."',";
@@ -150,8 +148,7 @@ class Holiday extends CommonObject
         $sql.= " '1',";
         $sql.= " '".$this->fk_validator."',";
         $sql.= " '".$this->fk_type."',";
-        $sql.= " ".$user->id.",";
-        $sql.= " ".$conf->entity;
+        $sql.= " ".$user->id;
         $sql.= ")";
 
         $this->db->begin();

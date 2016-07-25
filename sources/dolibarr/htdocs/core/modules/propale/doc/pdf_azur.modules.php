@@ -647,11 +647,8 @@ class pdf_azur extends ModelePDFPropales
 				*/
 
 				// Customer signature area
-				if (empty($conf->global->PROPAL_DISABLE_SIGNATURE))
-				{
-				    $posy=$this->_signature_area($pdf, $object, $posy, $outputlangs);
-				}
-				
+				$posy=$this->_signature_area($pdf, $object, $posy, $outputlangs);
+
 				// Pied de page
 				$this->_pagefoot($pdf,$object,$outputlangs);
 				if (method_exists($pdf,'AliasNbPages')) $pdf->AliasNbPages();
@@ -713,7 +710,7 @@ class pdf_azur extends ModelePDFPropales
 										if (file_exists($infile) && is_readable($infile)) {
 											$pagecount = $pdf->setSourceFile($infile);
 											for($i = 1; $i <= $pagecount; $i ++) {
-												$tplIdx = $pdf->importPage($i);
+												$tplIdx = $pdf->importPage(1);
 												if ($tplIdx!==false) {
 													$s = $pdf->getTemplatesize($tplIdx);
 													$pdf->AddPage($s['h'] > $s['w'] ? 'P' : 'L');

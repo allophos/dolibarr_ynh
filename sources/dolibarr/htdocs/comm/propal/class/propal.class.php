@@ -429,8 +429,7 @@ class Propal extends CommonObject
 				$product_type=$product->type;
 
 				if (! empty($conf->global->STOCK_MUST_BE_ENOUGH_FOR_PROPOSAL) && $product_type == 0 && $product->stock_reel < $qty) {
-                    $langs->load("errors");
-				    $this->error=$langs->trans('ErrorStockIsNotEnoughToAddProductOnProposal', $product->ref);
+					$this->error=$langs->trans('ErrorStockIsNotEnough');
 					$this->db->rollback();
 					return -3;
 				}
@@ -2506,7 +2505,7 @@ class Propal extends CommonObject
 	        $response = new WorkboardResponse();
 	        $response->warning_delay = $delay_warning/60/60/24;
 	        $response->label = $label;
-	        $response->url = DOL_URL_ROOT.'/comm/propal/list.php?viewstatut='.$statut.'&mainmenu=commercial&leftmenu=propals';
+	        $response->url = DOL_URL_ROOT.'/comm/propal/list.php?viewstatut='.$statut;
 	        $response->img = img_object($langs->trans("Propals"),"propal");
 
             // This assignment in condition is not a bug. It allows walking the results.

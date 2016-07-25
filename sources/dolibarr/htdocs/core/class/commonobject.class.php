@@ -4246,7 +4246,7 @@ abstract class CommonObject
 					$productFournisseur = new ProductFournisseur($this->db);
 					if (($result = $productFournisseur->find_min_price_product_fournisseur($fk_product)) > 0)
 					{
-						$buyPrice = $productFournisseur->fourn_unitprice;
+						$buyPrice = $productFournisseur->fourn_price;
 					}
 					else if ($result < 0)
 					{

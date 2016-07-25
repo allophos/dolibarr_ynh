@@ -617,11 +617,6 @@ if ($step == 4 && $datatoimport)
 	    $obj->separator = $separator;
 	    $obj->enclosure = $enclosure;
 	}
-	
-	$update = GETPOST('update');
-	if(!empty($update)) {
-		$array_match_file_to_database=array();
-	}
 
 	// Load source fields in input file
 	$fieldssource=array();
@@ -743,7 +738,7 @@ if ($step == 4 && $datatoimport)
 		print '<input type="text" size="1" name="separator" value="'.htmlentities($separator).'"/>';
 		print '&nbsp;&nbsp;&nbsp;&nbsp;'.$langs->trans("Enclosure").' : ';
 		print '<input type="text" size="1" name="enclosure" value="'.htmlentities($enclosure).'"/>';
-		print '<input name="update" type="submit" value="'.$langs->trans('Update').'" class="button" />';
+		print '<input type="submit" value="'.$langs->trans('Update').'" class="button" />';
 		print '</form>';
 		print '</td></tr>';
     }

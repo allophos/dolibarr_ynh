@@ -238,11 +238,8 @@ if (empty($reshook))
 	// Set supplier ref
 	if ($action == 'setref_supplier' && $user->rights->fournisseur->commande->creer)
 	{
-		$object->ref_supplier = GETPOST('ref_supplier', 'alpha');
-		
-		if ($object->update($user) < 0) {
-			setEventMessages($object->error, $object->errors, 'errors');
-		}
+	    $result=$object->setValueFrom('ref_supplier',GETPOST('ref_supplier','alpha'));
+	    if ($result < 0) dol_print_error($db, $object->error);
 	}
 
 	// payments conditions
@@ -292,17 +289,14 @@ if (empty($reshook))
 	}
 
 	// Delete payment
-	elseif ($action == 'confirm_delete_paiement' && $confirm == 'yes' && $user->rights->fournisseur->facture->creer)
+	elseif ($action == 'deletepaiement' && $user->rights->fournisseur->facture->creer)
 	{
-	 	$object->fetch($id);
+	    $object->fetch($id);
 	    if ($object->statut == FactureFournisseur::STATUS_VALIDATED && $object->paye == 0)
 	    {
 	    	$paiementfourn = new PaiementFourn($db);
 	        $result=$paiementfourn->fetch(GETPOST('paiement_id'));
-	        if ($result > 0) {
-	        	$result=$paiementfourn->delete(); // If fetch ok and found
-	        	header("Location: ".$_SERVER['PHP_SELF']."?id=".$id);
-			}
+	        if ($result > 0) $result=$paiementfourn->delete(); // If fetch ok and found
 	        if ($result < 0) {
 		        setEventMessages($paiementfourn->error, $paiementfourn->errors, 'errors');
 	        }
@@ -1355,7 +1349,7 @@ if ($action == 'create')
     }
     else
     {
-        print $form->select_company(GETPOST('socid','int'),'socid','s.fournisseur = 1','SelectThirdParty');
+        print $form->select_company(GETPOST('socid','int'),'socid','s.fournisseur = 1',1);
     }
     print '</td></tr>';
 
@@ -1727,12 +1721,6 @@ else
         if ($action == 'delete')
         {
 			$formconfirm = $form->formconfirm($_SERVER["PHP_SELF"].'?id='.$object->id, $langs->trans('DeleteBill'), $langs->trans('ConfirmDeleteBill'), 'confirm_delete', '', 0, 1);
-
-        }
-        if ($action == 'deletepaiement')
-        {
-        	$payment_id = GETPOST('paiement_id');
-			$formconfirm = $form->formconfirm($_SERVER["PHP_SELF"].'?id='.$object->id.'&paiement_id='.$payment_id, $langs->trans('DeletePayment'), $langs->trans('ConfirmDeletePayment'), 'confirm_delete_paiement', '', 0, 1);
 
         }
 

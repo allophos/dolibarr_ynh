@@ -341,22 +341,22 @@ if ($socid > 0)
 			$var = !$var;
 			print "<tr ".$bc[$var].">";
 			print '<td>'.dol_print_date($db->jdate($obj->dc),'dayhour').'</td>';
-			if (preg_match('/\(CREDIT_NOTE\)/',$obj->description))
+			if ($obj->description == '(CREDIT_NOTE)')
 			{
 				print '<td class="nowrap">';
 				$facturestatic->id=$obj->fk_facture_source;
 				$facturestatic->ref=$obj->ref;
 				$facturestatic->type=$obj->type;
-				print preg_replace('/\(CREDIT_NOTE\)/',$langs->trans("CreditNote"),$obj->description).' '.$facturestatic->getNomURl(1);
+				print $langs->trans("CreditNote").' '.$facturestatic->getNomURl(1);
 				print '</td>';
 			}
-			elseif (preg_match('/\(DEPOSIT\)/',$obj->description))
+			elseif ($obj->description == '(DEPOSIT)')
 			{
 				print '<td class="nowrap">';
 				$facturestatic->id=$obj->fk_facture_source;
 				$facturestatic->ref=$obj->ref;
 				$facturestatic->type=$obj->type;
-				print preg_replace('/\(DEPOSIT\)/',$langs->trans("InvoiceDeposit"),$obj->description).' '.$facturestatic->getNomURl(1);
+				print $langs->trans("InvoiceDeposit").' '.$facturestatic->getNomURl(1);
 				print '</td>';
 			}
 			else
@@ -500,22 +500,22 @@ if ($socid > 0)
 			$var = !$var;
 			print "<tr ".$bc[$var].">";
 			print '<td>'.dol_print_date($db->jdate($obj->dc),'dayhour').'</td>';
-			if (preg_match('/\(CREDIT_NOTE\)/',$obj->description))
+			if ($obj->description == '(CREDIT_NOTE)')
 			{
 				print '<td class="nowrap">';
 				$facturestatic->id=$obj->fk_facture_source;
 				$facturestatic->ref=$obj->ref;
 				$facturestatic->type=$obj->type;
-				print preg_replace('/\(CREDIT_NOTE\)/',$langs->trans("CreditNote"),$obj->description).' '.$facturestatic->getNomURl(1);
+				print $langs->trans("CreditNote").' '.$facturestatic->getNomURl(1);
 				print '</td>';
 			}
-			elseif (preg_match('/\(DEPOSIT\)/',$obj->description))
+			elseif ($obj->description == '(DEPOSIT)')
 			{
 				print '<td class="nowrap">';
 				$facturestatic->id=$obj->fk_facture_source;
 				$facturestatic->ref=$obj->ref;
 				$facturestatic->type=$obj->type;
-				print preg_replace('/\(DEPOSIT\)/',$langs->trans("InvoiceDeposit"),$obj->description).' '.$facturestatic->getNomURl(1);
+				print $langs->trans("InvoiceDeposit").' '.$facturestatic->getNomURl(1);
 				print '</td>';
 			}
 			else

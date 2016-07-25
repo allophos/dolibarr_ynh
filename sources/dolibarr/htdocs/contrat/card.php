@@ -326,7 +326,8 @@ if (empty($reshook))
 										$label = $lines[$i]->product_label;
 									}
 	
-									$desc .= ($lines[$i]->desc && $lines[$i]->desc!=$lines[$i]->libelle)?dol_htmlentitiesbr($lines[$i]->desc):'';
+									if ($conf->global->PRODUIT_DESC_IN_FORM)
+										$desc .= ($lines[$i]->desc && $lines[$i]->desc!=$lines[$i]->libelle)?dol_htmlentitiesbr($lines[$i]->desc):'';
 								}
 								else {
 								    $desc = dol_htmlentitiesbr($lines[$i]->desc);
@@ -357,6 +358,7 @@ if (empty($reshook))
 			                        $error++;
 			                        break;
 			                    }
+	
 							}
 		                }
 		            }
@@ -1025,7 +1027,7 @@ if ($action == 'create')
 
             $projectid          = (!empty($objectsrc->fk_project)?$objectsrc->fk_project:'');
 
-            $soc = $objectsrc->thirdparty;
+            $soc = $objectsrc->client;
 
             $note_private		= (! empty($objectsrc->note_private) ? $objectsrc->note_private : '');
             $note_public		= (! empty($objectsrc->note_public) ? $objectsrc->note_public : '');

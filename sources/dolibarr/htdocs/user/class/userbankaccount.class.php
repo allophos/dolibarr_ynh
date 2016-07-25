@@ -142,7 +142,8 @@ class UserBankAccount extends Account
         $sql = "SELECT rowid, fk_user, entity, bank, number, code_banque, code_guichet, cle_rib, bic, iban_prefix as iban, domiciliation, proprio,";
         $sql.= " owner_address, label, datec, tms as datem";
         $sql.= " FROM ".MAIN_DB_PREFIX."user_rib";
-        $sql.= " WHERE rowid = ".$id;
+        if ($id)    $sql.= " WHERE rowid = ".$id;
+        if ($socid) $sql.= " WHERE fk_user  = ".$userid;
 
         $resql = $this->db->query($sql);
         if ($resql)

@@ -975,7 +975,7 @@ class Societe extends CommonObject
         global $langs;
         global $conf;
 
-        if (empty($rowid) && empty($ref) && empty($ref_ext) && empty($ref_int) && empty($idprof1) && empty($idprof2) && empty($idprof3) && empty($idprof4)) return -1;
+        if (empty($rowid) && empty($ref) && empty($ref_ext) && empty($ref_int)) return -1;
 
         $sql = 'SELECT s.rowid, s.nom as name, s.name_alias, s.entity, s.ref_ext, s.ref_int, s.address, s.datec as date_creation, s.prefix_comm';
         $sql .= ', s.status';
@@ -3483,17 +3483,17 @@ class Societe extends CommonObject
 		 * Because this function is meant to be executed within a transaction, we won't take care of it.
 		 */
 		$sql = 'SELECT rowid
-FROM '.MAIN_DB_PREFIX.'societe_commerciaux
+FROM llx_societe_commerciaux
 WHERE fk_soc = '.(int) $dest_id.' AND fk_user IN (
   SELECT fk_user
-  FROM '.MAIN_DB_PREFIX.'societe_commerciaux
+  FROM llx_societe_commerciaux
   WHERE fk_soc = '.(int) $origin_id.'
 );';
 
 		$query = $db->query($sql);
 
 		while ($result = $db->fetch_object($query)) {
-			$db->query('DELETE FROM '.MAIN_DB_PREFIX.'societe_commerciaux WHERE rowid = '.$result->rowid);
+			$db->query('DELETE FROM llx_societe_commerciaux WHERE rowid = '.$result->rowid);
 		}
 
 		/**

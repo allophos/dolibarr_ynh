@@ -36,10 +36,10 @@ $id=GETPOST('account');
 $ref=GETPOST('ref');
 
 // Security check
-$fieldvalue = (! empty($id) ? $id : (! empty($ref) ? $ref :''));
-$fieldtype = (! empty($ref) ? 'ref' :'rowid');
+$fieldid = (! empty($ref)?$ref:$id);
+$fieldname = isset($ref)?'ref':'rowid';
 if ($user->societe_id) $socid=$user->societe_id;
-$result=restrictedArea($user,'banque',$fieldvalue,'bank_account&bank_account','','',$fieldtype);
+$result=restrictedArea($user,'banque',$fieldid,'bank_account','','',$fieldname);
 
 $year_start=GETPOST('year_start');
 $year_current = strftime("%Y",time());
@@ -146,7 +146,7 @@ $linkback = '<a href="'.DOL_URL_ROOT.'/compta/bank/index.php">'.$langs->trans("B
 // Ref
 print '<tr><td width="25%">'.$langs->trans("Ref").'</td>';
 print '<td colspan="3">';
-if (!empty($id))
+if ($_GET["account"])
 {
 	if (! preg_match('/,/', $id))
 	{

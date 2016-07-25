@@ -1,5 +1,5 @@
 <?php
-/* Copyright (C) 2013-2016 Alexandre Spangaro   <aspangaro.dolibarr@gmail.com>
+/* Copyright (C) 2013-2014 Alexandre Spangaro   <aspangaro.dolibarr@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,15 +30,12 @@ $action = GETPOST('action');
 $langs->load("admin");
 $langs->load("compta");
 
-// Security check
-if ($user->societe_id > 0)
-	accessforbidden();
-if (! $user->rights->accounting->fiscalyear)
+if (! $user->admin)
 	accessforbidden();
 
 $error = 0;
 
-// List of status
+// List of statut
 static $tmpstatut2label = array (
 		'0' => 'OpenFiscalYear',
 		'1' => 'CloseFiscalYear' 
