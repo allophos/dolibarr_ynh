@@ -3,9 +3,11 @@ dolibar app for yunohost
 
 for yunohost 2.4, untested
 
-##support
+## done
 - public site
 - mutli instance
+
+## todo
 - ldap authentication
 
 ## default admin
