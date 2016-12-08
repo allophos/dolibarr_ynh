@@ -12,7 +12,7 @@ fi
 
 path=${path%/}
 
-sudo yunohost app setting dolibarr version -v "3.8.0"
+sudo yunohost app setting dolibarr version -v "4.0.2"
 
 final_path=/var/www/dolibarr
 sudo mkdir -p $final_path
