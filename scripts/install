@@ -16,7 +16,9 @@ sudo yunohost app setting dolibarr version -v "4.0.2"
 
 final_path=/var/www/dolibarr
 sudo mkdir -p $final_path
-sudo cp -a ../sources/dolibarr/* $final_path
+# sudo cp -a ../sources/dolibarr/* $final_path
+git clone b 4.0 https://git@github.com//Dolibarr/dolibarr.gi $final_path
+
 
 sudo touch $final_path/htdocs/conf/conf.php
 sudo chown -R www-data: $final_path
